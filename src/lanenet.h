@@ -15,7 +15,7 @@
 #include <cuda_runtime_api.h>
 #include "NvInfer.h"
 #include "NvOnnxParser.h"
-#include "lanenet_imageprocessor.h"
+#include "imageprocessor.h"
 
 constexpr long long operator"" _MiB(long long unsigned val)
 {
@@ -53,6 +53,7 @@ private:
     std::vector<float> img_std;
     // nvinfer1::ICudaEngine *engine = nullptr;
     util::UniquePtr<nvinfer1::IExecutionContext> context =nullptr;;
+    std::string m_foldername;
     // nvinfer1::IExecutionContext *context = nullptr;
     // std::vector<cv::Scalar> class_colors;
 

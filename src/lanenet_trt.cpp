@@ -16,10 +16,6 @@
 
 int main(int argc, char **argv)
 {
-
-    // jpg2ppm("./lane_samples/0073.png", "./lane_samples/0073.ppm");
-    // jpg2ppm("./lane_samples/0553.png", "./lane_samples/0553.ppm");
-    // std::vector<uint8_t> buffer;
     if (argc < 3)
     {
         std::cout << "Please design config file and image folder!" << std::endl;

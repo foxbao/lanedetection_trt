@@ -1,6 +1,8 @@
 #include "lanenet.h"
 #include "yaml-cpp/yaml.h"
 #include "common.hpp"
+#include "postprocessor.h"
+
 // #include "common.h"
 #include <vector>
 Lanenet::Lanenet(const std::string &config_file)
@@ -51,6 +53,7 @@ void Lanenet::LoadEngine()
 
 bool Lanenet::InferenceFolder(const std::string &folder_name)
 {
+    m_foldername=folder_name;
     context = util::UniquePtr<nvinfer1::IExecutionContext>(mEngine->createExecutionContext());
     if (!context)
     {
@@ -116,6 +119,7 @@ bool Lanenet::InferenceFolder(const std::string &folder_name)
 bool Lanenet::EngineInference(const std::vector<std::string> &image_list, void **buffers_gpu,
                      const std::vector<int64_t> &bufferSize, const std::vector<nvinfer1::Dims> &data_dims,cudaStream_t stream)
 {
+
     auto output_buffer_cpu_0 = std::unique_ptr<float>{new float[bufferSize[1]]};
     auto output_buffer_cpu_1 = std::unique_ptr<int>{new int[bufferSize[2]]};
     auto output_buffer_cpu_2 = std::unique_ptr<float>{new float[bufferSize[3]]};
@@ -125,19 +129,22 @@ bool Lanenet::EngineInference(const std::vector<std::string> &image_list, void *
     std::string input_file_png_name;
     std::string input_file_ppm_name;
     util::PPM ppm;
+
+    auto pImgPostProcessor=std::make_unique<ImgPostProcessor>();
     for (const std::string &image_name : image_list)
     {
         index++;
         std::cout << "Processing: " << index << std::endl;
         file_name_no_extension = util::get_file_name_no_extension(image_name);
-        input_file_png_name = "../../lane_samples/" + file_name_no_extension + ".png";
-        input_file_ppm_name = "../../lane_samples_ppm/" + file_name_no_extension + ".ppm";
+        input_file_png_name = m_foldername+"/" + file_name_no_extension + ".png";
+        input_file_ppm_name = m_foldername+"_ppm/"+ file_name_no_extension + ".ppm";
         pImageProcessor->png2ppm(input_file_png_name.c_str(), ppm,IMAGE_RESIZE_HEIGHT,IMAGE_RESIZE_WIDTH);
 
         auto input_image{util::RGBImageReader(input_file_ppm_name, data_dims[0], this->img_mean, this->img_std)};
 
         // input_image.read();
         input_image.read(ppm);
+        // normalize with mean and std
         auto input_buffer = input_image.process();
 
         // Copy image data to input binding memory
@@ -181,17 +188,33 @@ bool Lanenet::EngineInference(const std::vector<std::string> &image_list, void *
         const int num_classes{21};
         const std::vector<int> palette{(0x1 << 25) - 1, (0x1 << 15) - 1, (0x1 << 21) - 1};
         // std::string output_filename = "../lane_samples/output.ppm";
-        std::string output_file_path = "../../lane_samples_result/output_" + file_name_no_extension + ".ppm";
+        std::string binary_file_path = m_foldername+"_result/output_" + file_name_no_extension + ".ppm";
 
+
+        pImgPostProcessor->processLane(output_buffer_cpu_1.get(),data_dims[2],output_buffer_cpu_2.get(),data_dims[3]);
         
-        auto output_image{PostProcessor(output_file_path, data_dims[2], palette, num_classes)};
-        output_image.processLane(output_buffer_cpu_1.get());
-        output_image.write();
+        
+        
+        util::PPM ppm_binary;
+        pImgPostProcessor->calBinary(output_buffer_cpu_1.get(),data_dims[2],ppm_binary);// binary output
+        pImgPostProcessor->write(binary_file_path,ppm_binary);
 
-        std::string instance_file_path = "../../lane_samples_result/output_instance_" + file_name_no_extension + ".ppm";
-        auto instance_image{PostProcessor(instance_file_path, data_dims[3], palette, num_classes)};
-        instance_image.calInstance(output_buffer_cpu_2.get());
-        instance_image.write();
+        std::string instance_file_path = m_foldername+"_result/output_instance_" + file_name_no_extension + ".ppm";
+        util::PPM ppm_instance;
+        pImgPostProcessor->calInstance(output_buffer_cpu_2.get(),data_dims[3],ppm_instance);// binary output
+        pImgPostProcessor->write(instance_file_path,ppm_instance);
+
+
+
+        // auto output_image{PostProcessor(output_file_path, data_dims[2], palette, num_classes)};
+        // output_image.processLane(output_buffer_cpu_1.get());
+        // output_image.write();
+
+        // std::string instance_file_path = "../../lane_samples_result/output_instance_" + file_name_no_extension + ".ppm";
+        // auto instance_image{PostProcessor(instance_file_path, data_dims[3], palette, num_classes)};
+        // instance_image.calInstance(output_buffer_cpu_2.get());
+        // instance_image.write();
     }
+
 }
 

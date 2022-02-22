@@ -39,7 +39,7 @@ include_directories(${CUDA_INCLUDE_DIRS} ${TENSORRT_INCLUDE_DIR} ${OpenCV_INCLUD
 link_directories(${YAML_LIB_DIR})
 
 # add_executable(lanenet_trt lanenet_trt.cpp lanenet.cpp)
-set(SOURCE_LANENET ./includes/common/logger.cpp ./includes/common/util.cpp src/lanenet.cpp src/lanenet_imageprocessor.cpp)
+set(SOURCE_LANENET ./includes/common/logger.cpp ./includes/common/util.cpp src/lanenet.cpp src/imageprocessor.cpp src/postprocessor.cpp)
 # add_executable(lanenet_trt lanenet_trt.cpp ${SOURCE})
 add_executable(lanenet_trt src/lanenet_trt.cpp ${SOURCE_LANENET})
 

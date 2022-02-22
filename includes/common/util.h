@@ -82,16 +82,16 @@ namespace util
         std::vector<float> mStd;
     };
 
-    class PNGImageReader : public ImageBase
-    {
-    public:
-        PNGImageReader(const std::string &filename, const nvinfer1::Dims &dims, const std::vector<float> &mean, const std::vector<float> &std);
-        std::unique_ptr<float> process() const;
+    // class PNGImageReader : public ImageBase
+    // {
+    // public:
+    //     PNGImageReader(const std::string &filename, const nvinfer1::Dims &dims, const std::vector<float> &mean, const std::vector<float> &std);
+    //     std::unique_ptr<float> process() const;
 
-    private:
-        std::vector<float> mMean;
-        std::vector<float> mStd;
-    };
+    // private:
+    //     std::vector<float> mMean;
+    //     std::vector<float> mStd;
+    // };
 
     class ArgmaxImageWriter : public ImageBase
     {

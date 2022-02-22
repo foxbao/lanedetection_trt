@@ -93,35 +93,35 @@ namespace util
         outfile.close();
     }
 
-    PNGImageReader::PNGImageReader(const std::string &filename, const nvinfer1::Dims &dims, const std::vector<float> &mean, const std::vector<float> &std)
-        : ImageBase(filename, dims), mMean(mean), mStd(std)
-    {
-    }
+    // PNGImageReader::PNGImageReader(const std::string &filename, const nvinfer1::Dims &dims, const std::vector<float> &mean, const std::vector<float> &std)
+    //     : ImageBase(filename, dims), mMean(mean), mStd(std)
+    // {
+    // }
 
-    std::unique_ptr<float> PNGImageReader::process() const
-    {
-        const int C = mDims.d[1];
-        const int H = mDims.d[2];
-        const int W = mDims.d[3];
-        auto buffer = std::unique_ptr<float>{new float[volume()]};
+    // std::unique_ptr<float> PNGImageReader::process() const
+    // {
+    //     const int C = mDims.d[1];
+    //     const int H = mDims.d[2];
+    //     const int W = mDims.d[3];
+    //     auto buffer = std::unique_ptr<float>{new float[volume()]};
 
-        if (mPPM.h == H && mPPM.w == W)
-        {
-            for (int c = 0; c < C; c++)
-            {
-                for (int j = 0, HW = H * W; j < HW; ++j)
-                {
-                    buffer.get()[c * HW + j] = (static_cast<float>(mPPM.buffer[j * C + c]) / mPPM.max - mMean[c]) / mStd[c];
-                }
-            }
-        }
-        else
-        {
-            assert(!"Specified dimensions don't match PPM image");
-        }
+    //     if (mPPM.h == H && mPPM.w == W)
+    //     {
+    //         for (int c = 0; c < C; c++)
+    //         {
+    //             for (int j = 0, HW = H * W; j < HW; ++j)
+    //             {
+    //                 buffer.get()[c * HW + j] = (static_cast<float>(mPPM.buffer[j * C + c]) / mPPM.max - mMean[c]) / mStd[c];
+    //             }
+    //         }
+    //     }
+    //     else
+    //     {
+    //         assert(!"Specified dimensions don't match PPM image");
+    //     }
 
-        return buffer;
-    }
+    //     return buffer;
+    // }
 
     RGBImageReader::RGBImageReader(const std::string &filename, const nvinfer1::Dims &dims, const std::vector<float> &mean, const std::vector<float> &std)
         : ImageBase(filename, dims), mMean(mean), mStd(std)
