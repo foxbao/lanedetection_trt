@@ -132,7 +132,7 @@ bool Lanenet::EngineInference(const std::vector<std::string> &image_list, void *
         file_name_no_extension = util::get_file_name_no_extension(image_name);
         input_file_png_name = "../../lane_samples/" + file_name_no_extension + ".png";
         input_file_ppm_name = "../../lane_samples_ppm/" + file_name_no_extension + ".ppm";
-        pImageProcessor->png2ppm(input_file_png_name.c_str(), ppm);
+        pImageProcessor->png2ppm(input_file_png_name.c_str(), ppm,IMAGE_RESIZE_HEIGHT,IMAGE_RESIZE_WIDTH);
 
         auto input_image{util::RGBImageReader(input_file_ppm_name, data_dims[0], this->img_mean, this->img_std)};
 

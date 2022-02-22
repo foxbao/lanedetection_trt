@@ -127,12 +127,12 @@ void ImageProcessor::png2ppm(const char *input, const char *output)
 }
 
 
-void ImageProcessor::png2ppm(const char *input, util::PPM &ppm)
+void ImageProcessor::png2ppm(const char *input, util::PPM &ppm,int height,int width)
 {
     using namespace std;
     cv::Size sz;
-    sz.height = 256;
-    sz.width = 512;
+    sz.height = height;
+    sz.width = width;
     ppm.magic = "P6";
     ppm.h = sz.height;
     ppm.w = sz.width;
