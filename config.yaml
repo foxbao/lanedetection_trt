@@ -1,0 +1,25 @@
+Lanenet:
+    model_file:    "../../lanenet.pth"
+    onnx_file:     "../../lanenet.onnx"
+    engine_file:   "../../lanenet.engine"
+    # engine_file:   "./fcn-resnet101.engine"
+    BATCH_SIZE:    1
+    INPUT_CHANNEL: 3
+    # IMAGE_WIDTH:   1282
+    # IMAGE_HEIGHT:  1026
+    # OUT_WIDTH:     1282
+    # OUT_HEIGHT:    1026
+    # IMAGE_WIDTH:   1280
+    # IMAGE_HEIGHT:  720
+    # OUT_WIDTH:     1280
+    # OUT_HEIGHT:    720
+    IMAGE_WIDTH:   512
+    IMAGE_HEIGHT:  256
+    OUT_WIDTH:     512
+    OUT_HEIGHT:    256
+    IMAGE_RESIZE_WIDTH:   512
+    IMAGE_RESIZE_HEIGHT:   256
+    CATEGORY:      2
+    img_mean:      [ 0.485, 0.456, 0.406 ]
+    img_std:       [ 0.229, 0.224, 0.225 ]
+    
