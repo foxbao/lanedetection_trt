@@ -1,11 +1,17 @@
 #include "postprocessor.h"
 
-void ImgPostProcessor::calBinary(const int *buffer, const nvinfer1::Dims &dim, util::PPM &dst_ppm)
+ImgPostProcessor::ImgPostProcessor()
+{
+    min_area_threshold = 100;
+    sp_laneCluster = std::make_shared<LaneCluster>();
+}
+void ImgPostProcessor::generateBinarySegmentThree(const int *buffer, const nvinfer1::Dims &dim, util::PPM &dst_ppm)
 {
     // util::PPM ppm;
     dst_ppm.magic = "P6";
     dst_ppm.w = dim.d[3];
     dst_ppm.h = dim.d[2];
+    dst_ppm.c = 3;
     dst_ppm.max = 255;
     dst_ppm.buffer.resize(volume(dst_ppm));
 
@@ -22,11 +28,31 @@ void ImgPostProcessor::calBinary(const int *buffer, const nvinfer1::Dims &dim, u
     }
 }
 
+void ImgPostProcessor::generateBinarySegment(const int *buffer, const nvinfer1::Dims &dim, util::PPM &dst_ppm)
+{
+    // util::PPM ppm;
+    dst_ppm.magic = "P6";
+    dst_ppm.w = dim.d[3];
+    dst_ppm.h = dim.d[2];
+    dst_ppm.c = 1;
+    dst_ppm.max = 255;
+    dst_ppm.buffer.resize(volume(dst_ppm));
+
+    for (int j = 0, HW = dst_ppm.h * dst_ppm.w; j < HW; ++j)
+    {
+        if (0 != buffer[j])
+        {
+            dst_ppm.buffer.data()[j] = 255;
+        }
+    }
+}
+
 void ImgPostProcessor::calInstance(const float *buffer, const nvinfer1::Dims &dim, util::PPM &dst_ppm)
 {
     dst_ppm.magic = "P6";
     dst_ppm.w = dim.d[3];
     dst_ppm.h = dim.d[2];
+    dst_ppm.c = 3;
     dst_ppm.max = 255;
     dst_ppm.buffer.resize(volume(dst_ppm));
 
@@ -41,6 +67,24 @@ void ImgPostProcessor::calInstance(const float *buffer, const nvinfer1::Dims &di
     }
 }
 
+cv::Mat ImgPostProcessor::_morphological_process(const util::PPM &binary_ppm, int kernel_size)
+{
+    cv::Mat binary_img(binary_ppm.h, binary_ppm.w, CV_8UC1, cv::Scalar(0));
+
+    cv::MatIterator_<uchar> it, end;
+
+    int idx;
+
+    for (it = binary_img.begin<uchar>(), end = binary_img.end<uchar>(), idx = 0; it != end; ++it, ++idx)
+    {
+        (*it) = binary_ppm.buffer.data()[idx];
+    }
+
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(kernel_size, kernel_size));
+    cv::Mat closing;
+    cv::morphologyEx(binary_img, closing, cv::MORPH_CLOSE, kernel);
+    return closing;
+}
 
 cv::Mat ImgPostProcessor::_morphological_process(const cv::Mat &image, int kernel_size)
 {
@@ -81,14 +125,58 @@ void ImgPostProcessor::_connect_components_analysis(const cv::Mat &image, cv::Ma
     // return cv2.connectedComponentsWithStats(gray_image, connectivity=8, ltype=cv2.CV_32S)
 }
 
-void ImgPostProcessor::processLane(const int *buffer_binary,const nvinfer1::Dims& dim_binary,const float *buffer_instance,const nvinfer1::Dims& dim_instance)
+template <class T>
+bool findValue(const cv::Mat &mat, T value) {
+    for(int i = 0;i < mat.rows;i++) {
+        const T* row = mat.ptr<T>(i);
+        if(std::find(row, row + mat.cols, value) != row + mat.cols)
+            return true;
+    }
+    return false;
+}
+
+void ImgPostProcessor::processLane(const int *buffer_binary, const nvinfer1::Dims &dim_binary, const float *buffer_instance, const nvinfer1::Dims &dim_instance)
 {
-    int a=1;
+    util::PPM ppm_binary;
+    this->generateBinarySegment(buffer_binary, dim_binary, ppm_binary); // binary output
+    // this->generateBinarySegmentThree(buffer_binary,dim_binary,ppm_binary);// binary output
+    cv::Mat morphological_ret = this->_morphological_process(ppm_binary);
+    cv::Mat labels, stats, centroids;
+    this->_connect_components_analysis(morphological_ret, labels, stats, centroids);
+
+    int stc = stats.channels();
+    for (size_t nrow = 0; nrow < stats.rows; nrow++)
+    {
+        uchar *data = stats.ptr<uchar>(nrow);
+        for(size_t ncol = 0; ncol < stats.cols * stats.channels(); ncol++)
+        {
+            // std::cout << int( data[ncol] ) <<" "; 
+            
+        }
+        // std::cout <<std::endl;
+
+        if(int( data[4] )<min_area_threshold)
+        {
+            // std::cout<<findValue(morphological_ret,nrow)<<std::endl;
+            // int aaaaa=2;
+        }
+        // morphological_ret.
+        
+
+
+    }
+
+    // for index, stat in enumerate(stats):
+    //     if stat[4] <= min_area_threshold:
+    //         idx = np.where(labels == index)
+    //         morphological_ret[idx] = 0
+
+    this->sp_laneCluster->apply_lane_feats_cluster();
 }
 
 int ImgPostProcessor::volume(util::PPM &ppm)
 {
-    return ppm.w * ppm.h * 3;
+    return ppm.w * ppm.h * ppm.c;
 }
 
 void ImgPostProcessor::write(const std::string &filename, util::PPM ppm)

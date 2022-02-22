@@ -134,7 +134,7 @@ bool Lanenet::EngineInference(const std::vector<std::string> &image_list, void *
     for (const std::string &image_name : image_list)
     {
         index++;
-        std::cout << "Processing: " << index << std::endl;
+        std::cout << "Processing: " << image_name << std::endl;
         file_name_no_extension = util::get_file_name_no_extension(image_name);
         input_file_png_name = m_foldername+"/" + file_name_no_extension + ".png";
         input_file_ppm_name = m_foldername+"_ppm/"+ file_name_no_extension + ".ppm";
@@ -196,7 +196,7 @@ bool Lanenet::EngineInference(const std::vector<std::string> &image_list, void *
         
         
         util::PPM ppm_binary;
-        pImgPostProcessor->calBinary(output_buffer_cpu_1.get(),data_dims[2],ppm_binary);// binary output
+        pImgPostProcessor->generateBinarySegmentThree(output_buffer_cpu_1.get(),data_dims[2],ppm_binary);// binary output
         pImgPostProcessor->write(binary_file_path,ppm_binary);
 
         std::string instance_file_path = m_foldername+"_result/output_instance_" + file_name_no_extension + ".ppm";
