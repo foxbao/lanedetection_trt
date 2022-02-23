@@ -102,37 +102,37 @@ void DBSCAN(vector<point> dataset,float Eps,int MinPts){
 	}
 	//core point 
 	cout<<"core point "<<endl;
-	vector<point> corePoint;
+	vector<point> corePoints;
 	for(int i=0;i<len;i++){
 		if(dataset[i].pts>=MinPts) {
 			dataset[i].pointType = 3;
-			corePoint.push_back(dataset[i]);
+			corePoints.push_back(dataset[i]);
 		}
 	}
 	cout<<"joint core point"<<endl;
 	//joint core point
-	for(int i=0;i<corePoint.size();i++){
-		for(int j=i+1;j<corePoint.size();j++){
-			if(squareDistance(corePoint[i],corePoint[j])<Eps){
-				corePoint[i].corepts.push_back(j);
-				corePoint[j].corepts.push_back(i);
+	for(int i=0;i<corePoints.size();i++){
+		for(int j=i+1;j<corePoints.size();j++){
+			if(squareDistance(corePoints[i],corePoints[j])<Eps){
+				corePoints[i].corepts.push_back(j);
+				corePoints[j].corepts.push_back(i);
 			}
 		}
 	}
-	for(int i=0;i<corePoint.size();i++){
+	for(int i=0;i<corePoints.size();i++){
 		stack<point*> ps;
-		if(corePoint[i].visited == 1) continue;
-		ps.push(&corePoint[i]);
+		if(corePoints[i].visited == 1) continue;
+		ps.push(&corePoints[i]);
 		point *v;
 		while(!ps.empty()){
 			v = ps.top();
 			v->visited = 1;
 			ps.pop();
 			for(int j=0;j<v->corepts.size();j++){
-				if(corePoint[v->corepts[j]].visited==1) continue;
-				corePoint[v->corepts[j]].cluster = corePoint[i].cluster;
-				corePoint[v->corepts[j]].visited = 1;
-				ps.push(&corePoint[v->corepts[j]]);				
+				if(corePoints[v->corepts[j]].visited==1) continue;
+				corePoints[v->corepts[j]].cluster = corePoints[i].cluster;
+				corePoints[v->corepts[j]].visited = 1;
+				ps.push(&corePoints[v->corepts[j]]);				
 			}
 		}		
 	}
@@ -140,10 +140,10 @@ void DBSCAN(vector<point> dataset,float Eps,int MinPts){
 	//border point,joint border point to core point
 	for(int i=0;i<len;i++){
 		if(dataset[i].pointType==3) continue;
-		for(int j=0;j<corePoint.size();j++){
-			if(squareDistance(dataset[i],corePoint[j])<Eps) {
+		for(int j=0;j<corePoints.size();j++){
+			if(squareDistance(dataset[i],corePoints[j])<Eps) {
 				dataset[i].pointType = 2;
-				dataset[i].cluster = corePoint[j].cluster;
+				dataset[i].cluster = corePoints[j].cluster;
 				break;
 			}
 		}
@@ -156,8 +156,8 @@ void DBSCAN(vector<point> dataset,float Eps,int MinPts){
 		if(dataset[i].pointType == 2)
 			clustering<<dataset[i].x<<","<<dataset[i].y<<","<<dataset[i].cluster<<"\n";
 	}
-	for(int i=0;i<corePoint.size();i++){
-			clustering<<corePoint[i].x<<","<<corePoint[i].y<<","<<corePoint[i].cluster<<"\n";
+	for(int i=0;i<corePoints.size();i++){
+			clustering<<corePoints[i].x<<","<<corePoints[i].y<<","<<corePoints[i].cluster<<"\n";
 	}
 	clustering.close();
 }
@@ -182,10 +182,6 @@ int main(int argc, char **argv)
 	// vector<point> dataset = openFile("dataset3.txt");
 	// plotPoints(dataset);
 	// DBSCAN(dataset,100,2);
-
-
-
-
 	
     if (argc < 3)
     {

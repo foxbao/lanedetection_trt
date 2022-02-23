@@ -10,14 +10,14 @@ void LaneCluster::apply_lane_feats_cluster(cv::Mat &binary_seg_result, cv::Mat &
     std::vector<std::vector<float>> lane_embedding_feats;
     std::vector<std::vector<int>> lane_coordinate;
     this->_get_lane_embedding_feats(binary_seg_result, instance_seg_result,lane_embedding_feats,lane_coordinate);
-    _embedding_feats_dbscan_cluster(lane_embedding_feats,lane_coordinate);
-    sp_dbscan->cluter(lane_embedding_feats);
+    _embedding_feats_dbscan_cluster(lane_embedding_feats);
+    
     int bbb=2;
 }
 
-void LaneCluster::_embedding_feats_dbscan_cluster(const std::vector<std::vector<float>> &lane_embedding_feats,const std::vector<std::vector<int>> &lane_coordinate)
+void LaneCluster::_embedding_feats_dbscan_cluster(const std::vector<std::vector<float>> &lane_embedding_feats)
 {
-    int aaa=1;
+    sp_dbscan->cluster(lane_embedding_feats);
 }
 
 
