@@ -182,6 +182,11 @@ int main(int argc, char **argv)
 	// vector<point> dataset = openFile("dataset3.txt");
 	// plotPoints(dataset);
 	// DBSCAN(dataset,100,2);
+
+
+
+
+	
     if (argc < 3)
     {
         std::cout << "Please design config file and image folder!" << std::endl;

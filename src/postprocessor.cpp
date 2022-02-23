@@ -5,7 +5,7 @@ ImgPostProcessor::ImgPostProcessor()
     min_area_threshold = 100;
     sp_laneCluster = std::make_shared<LaneCluster>();
     // sp_dbscan= std::make_shared<DBSCAN>();
-    sp_dbscan=std::make_shared<DBSCAN>();
+    
 }
 void ImgPostProcessor::generateBinarySegmentThree(const int *buffer, const nvinfer1::Dims &dim, util::PPM &dst_ppm)
 {
@@ -209,6 +209,7 @@ void ImgPostProcessor::processLane(const int *buffer_binary, const nvinfer1::Dim
     }
 
     this->sp_laneCluster->apply_lane_feats_cluster(morphological_ret,mat_instance_seg_result);
+    int aaa=1;
 
 
 

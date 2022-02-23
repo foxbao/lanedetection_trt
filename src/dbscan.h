@@ -21,6 +21,10 @@ class DBSCAN
 {
     public:
         DBSCAN();
+		void cluter(const std::vector<std::vector<float>>& lane_embedding_feats);
     private:
-        float squareDistance(point a,point b);
+        float squareDistance(const point &a,const point &b);
+		double eps;
+		double min_samples;
+
 };
