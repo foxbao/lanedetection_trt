@@ -190,7 +190,6 @@ bool Lanenet::EngineInference(const std::vector<std::string> &image_list, void *
         // std::string output_filename = "../lane_samples/output.ppm";
         std::string binary_file_path = m_foldername+"_result/output_" + file_name_no_extension + ".ppm";
 
-
         pImgPostProcessor->processLane(output_buffer_cpu_1.get(),data_dims[2],output_buffer_cpu_2.get(),data_dims[3]);
         
         
