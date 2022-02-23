@@ -134,7 +134,7 @@ bool Lanenet::EngineInference(const std::vector<std::string> &image_list, void *
     for (const std::string &image_name : image_list)
     {
         index++;
-        std::cout << "Processing: " << image_name << std::endl;
+        std::cout << "Processing: " << index << std::endl;
         file_name_no_extension = util::get_file_name_no_extension(image_name);
         input_file_png_name = m_foldername+"/" + file_name_no_extension + ".png";
         input_file_ppm_name = m_foldername+"_ppm/"+ file_name_no_extension + ".ppm";

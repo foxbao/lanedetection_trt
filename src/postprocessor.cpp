@@ -103,6 +103,24 @@ cv::Mat ImgPostProcessor::_morphological_process(const cv::Mat &image, int kerne
     return closing;
 }
 
+void ImgPostProcessor::_generateMatInstance(cv::Mat &mat_instance_seg_result,const float *buffer_instance, const nvinfer1::Dims &dim_instance)
+{
+    int H=dim_instance.d[2];//height
+    int W=dim_instance.d[3];//width
+    mat_instance_seg_result=cv::Mat(H,W,CV_8UC3);
+    int idx;
+    cv::MatIterator_<cv::Vec3b> it, end;
+
+    // buffer_instance format is CHW, whicle cv::Mat is HWC
+    for (it = mat_instance_seg_result.begin<cv::Vec3b>(), end = mat_instance_seg_result.end<cv::Vec3b>(), idx = 0; it != end; ++it, ++idx)
+    {
+
+        (*it)[0]=buffer_instance[idx]*255;
+        (*it)[1]=buffer_instance[idx+H*W]*255;
+        (*it)[2]=buffer_instance[idx+2*H*W]*255;
+    }
+}
+
 void ImgPostProcessor::_connect_components_analysis(const cv::Mat &image, cv::Mat &labels, cv::Mat &stats, cv::Mat &centroids)
 {
     //         if len(image.shape) == 3:
@@ -118,9 +136,6 @@ void ImgPostProcessor::_connect_components_analysis(const cv::Mat &image, cv::Ma
     {
         gray_image = image;
     }
-    // cv::Mat labels;
-    // cv::Mat stats;
-    // cv::Mat centroids;
     cv::connectedComponentsWithStats(gray_image, labels, stats, centroids, 8);
     // return cv2.connectedComponentsWithStats(gray_image, connectivity=8, ltype=cv2.CV_32S)
 }
@@ -155,7 +170,11 @@ void ImgPostProcessor::processLane(const int *buffer_binary, const nvinfer1::Dim
     this->generateBinarySegment(buffer_binary, dim_binary, ppm_binary); // binary output
     // apply image morphology operation to fill in the hold and reduce the small area
     cv::Mat morphological_ret = this->_morphological_process(ppm_binary);
+    cv::Mat mat_instance_seg_result;
+    this->_generateMatInstance(mat_instance_seg_result,buffer_instance,dim_instance);
 
+
+    // cv::imwrite("generatedMatInstance.jpg",mat_instance_seg_result);
     // apply connect component to connect the areas
     cv::Mat labels, stats, centroids;
     this->_connect_components_analysis(morphological_ret, labels, stats, centroids);
@@ -186,6 +205,10 @@ void ImgPostProcessor::processLane(const int *buffer_binary, const nvinfer1::Dim
             }
         }
     }
+
+    this->sp_laneCluster->apply_lane_feats_cluster(morphological_ret,mat_instance_seg_result);
+
+
 
     // cv::imwrite("morphological_ret_processed.jpg", morphological_ret);
 
@@ -261,7 +284,7 @@ void ImgPostProcessor::processLane(const int *buffer_binary, const nvinfer1::Dim
     //         idx = np.where(labels == index)
     //         morphological_ret[idx] = 0
 
-    this->sp_laneCluster->apply_lane_feats_cluster();
+    
 }
 
 int ImgPostProcessor::volume(util::PPM &ppm)
