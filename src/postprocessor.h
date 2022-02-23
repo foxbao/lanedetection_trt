@@ -1,5 +1,6 @@
 #include "util.h"
 #include "lanecluster.h"
+#include "dbscan.h"
 class ImgPostProcessor
 {
     public:
@@ -12,6 +13,7 @@ class ImgPostProcessor
         int volume(util::PPM &ppm);
     private:
         std::shared_ptr<LaneCluster> sp_laneCluster;
+        std::shared_ptr<DBSCAN> sp_dbscan;
         int min_area_threshold;
         cv::Mat _morphological_process(const util::PPM &binary_ppm, int kernel_size = 5);
         cv::Mat _morphological_process(const cv::Mat &image, int kernel_size = 5);

@@ -4,6 +4,8 @@ ImgPostProcessor::ImgPostProcessor()
 {
     min_area_threshold = 100;
     sp_laneCluster = std::make_shared<LaneCluster>();
+    // sp_dbscan= std::make_shared<DBSCAN>();
+    sp_dbscan=std::make_shared<DBSCAN>();
 }
 void ImgPostProcessor::generateBinarySegmentThree(const int *buffer, const nvinfer1::Dims &dim, util::PPM &dst_ppm)
 {
