@@ -16,6 +16,14 @@ DBSCAN::DBSCAN()
 	min_samples_ = 100;
 }
 
+void DBSCAN::clear_variables()
+{
+	labels_.clear();
+	core_sample_indices_.clear();
+	unique_labels_.clear();
+	num_clusters_=0;
+}
+
 void DBSCAN::fit_transform(const std::vector<std::vector<float>> &lane_embedding_feats, std::vector<std::vector<double>> &features)
 {
 	int channel_num = 3;
@@ -59,6 +67,7 @@ void DBSCAN::fit_transform(const std::vector<std::vector<float>> &lane_embedding
 void DBSCAN::cluster(const std::vector<std::vector<float>> &lane_embedding_feats)
 {
 	// normalize the data
+	clear_variables();
 	std::vector<std::vector<double>> features;
 	fit_transform(lane_embedding_feats, features);
 	// cluster the data
@@ -141,7 +150,7 @@ void DBSCAN::border(std::vector<point> &dataset, std::vector<point> &corePoints)
 {
 	std::cout << "border point,joint border point to core point" << std::endl;
 	//border point,joint border point to core point
-	int len=dataset.size();
+	int len = dataset.size();
 	for (int i = 0; i < len; i++)
 	{
 		if (dataset[i].pointType == 3)
@@ -160,10 +169,10 @@ void DBSCAN::border(std::vector<point> &dataset, std::vector<point> &corePoints)
 
 void DBSCAN::output(std::vector<point> &dataset, std::vector<point> &corePoints)
 {
-		std::cout << "output" << std::endl;
+	std::cout << "output" << std::endl;
 	//output
 	std::fstream clustering;
-	int len=dataset.size();
+	int len = dataset.size();
 	clustering.open("clustering.txt", std::ios::out);
 	for (int i = 0; i < len; i++)
 	{
@@ -177,6 +186,21 @@ void DBSCAN::output(std::vector<point> &dataset, std::vector<point> &corePoints)
 		clustering << corePoints[i].x << "," << corePoints[i].y << "," << corePoints[i].z << "," << corePoints[i].cluster << "\n";
 	}
 	clustering.close();
+}
+
+void DBSCAN::calLabels(const std::vector<point> &corePoints)
+{
+	for (auto cp : corePoints)
+	{
+		labels_.push_back(cp.cluster);
+	}
+	
+
+	unique_labels_ = labels_;
+	std::sort(unique_labels_.begin(), unique_labels_.end());
+	auto it = std::unique(unique_labels_.begin(), unique_labels_.end());
+	unique_labels_.erase(it, unique_labels_.end());
+	num_clusters_ = unique_labels_.size();
 }
 
 void DBSCAN::cluster(const std::vector<std::vector<double>> &features)
@@ -193,21 +217,18 @@ void DBSCAN::cluster(const std::vector<std::vector<double>> &features)
 	calculatePts(dataset);
 	calculateCorePts(dataset, corePoints);
 	jointCorePts(corePoints);
-	border(dataset,corePoints);
-	// output(dataset, corePoints);
-
-	std::vector<int> labels;
-	for (auto cp : corePoints)
-	{
-		labels.push_back(cp.cluster);
-	}
-	std::sort(labels.begin(), labels.end());
-	std::vector<int> unique_labels=labels;
-	auto it = std::unique(unique_labels.begin(), unique_labels.end());
-	unique_labels.erase(it, unique_labels.end());
-	int num_clusters=unique_labels.size();
-
-	
+	border(dataset, corePoints);
+	output(dataset, corePoints);
+	calLabels(corePoints);
+	// for (auto cp : corePoints)
+	// {
+	// 	labels_.push_back(cp.cluster);
+	// }
+	// std::sort(labels_.begin(), labels_.end());
+	// unique_labels_ = labels_;
+	// auto it = std::unique(unique_labels_.begin(), unique_labels_.end());
+	// unique_labels_.erase(it, unique_labels_.end());
+	// int num_clusters = unique_labels_.size();
 }
 
 float DBSCAN::squareDistance(const point &a, const point &b)

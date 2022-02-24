@@ -1,9 +1,9 @@
 #include "postprocessor.h"
-
+#include "inner_types.h"
 ImgPostProcessor::ImgPostProcessor()
 {
     min_area_threshold = 100;
-    sp_laneCluster = std::make_shared<LaneCluster>();
+    sp_laneCluster_ = std::make_shared<LaneCluster>();
     // sp_dbscan= std::make_shared<DBSCAN>();
     
 }
@@ -142,17 +142,9 @@ void ImgPostProcessor::_connect_components_analysis(const cv::Mat &image, cv::Ma
     // return cv2.connectedComponentsWithStats(gray_image, connectivity=8, ltype=cv2.CV_32S)
 }
 
-// template <class T>
-// bool findValue(const cv::Mat &mat, T value) {
-//     for(int i = 0;i < mat.rows;i++) {
-//         const T* row = mat.ptr<T>(i);
-//         if(std::find(row, row + mat.cols, value) != row + mat.cols)
-//             return true;
-//     }
-//     return false;
-// }
 
-bool isInVector(const int &value, std::vector<int> &vec)
+
+bool ImgPostProcessor::_isInVector(const int &value, std::vector<int> &vec)
 {
     std::vector<int>::iterator ret;
     ret = std::find(vec.begin(), vec.end(), value);
@@ -165,6 +157,48 @@ bool isInVector(const int &value, std::vector<int> &vec)
         return false;
     }
 }
+
+
+void ImgPostProcessor::_remove_small_connect_components(const cv::Mat &labels, const cv::Mat &stats,cv::Mat &morphological_ret)
+{
+    std::vector<int> idx_to_remove;
+    for (size_t nrow = 0; nrow < stats.rows; nrow++)
+    {
+        const int *stats_ptr = stats.ptr<int>(nrow);
+        if (int(stats_ptr[4]) < min_area_threshold)
+        {
+            idx_to_remove.push_back(nrow);
+        }
+    }
+
+    for (size_t nrow = 0; nrow < labels.rows; nrow++)
+    {
+        const int *labels_ptr = labels.ptr<int>(nrow);
+        uchar *morphological_ret_ptr = morphological_ret.ptr<uchar>(nrow);
+        for (size_t ncol = 0; ncol < labels.cols * labels.channels(); ncol++)
+        {
+            if (int(labels_ptr[ncol]) != 0)
+            {
+                if (_isInVector(int(labels_ptr[ncol]), idx_to_remove))
+                {
+                    morphological_ret_ptr[ncol]=0;
+                }
+            }
+        }
+    }
+}
+
+// template <class T>
+// bool findValue(const cv::Mat &mat, T value) {
+//     for(int i = 0;i < mat.rows;i++) {
+//         const T* row = mat.ptr<T>(i);
+//         if(std::find(row, row + mat.cols, value) != row + mat.cols)
+//             return true;
+//     }
+//     return false;
+// }
+
+
 
 void ImgPostProcessor::processLane(const int *buffer_binary, const nvinfer1::Dims &dim_binary, const float *buffer_instance, const nvinfer1::Dims &dim_instance)
 {
@@ -182,33 +216,12 @@ void ImgPostProcessor::processLane(const int *buffer_binary, const nvinfer1::Dim
     this->_connect_components_analysis(morphological_ret, labels, stats, centroids);
 
     // remove the very small connected components
-    std::vector<int> idx_to_remove;
-    for (size_t nrow = 0; nrow < stats.rows; nrow++)
-    {
-        int *stats_ptr = stats.ptr<int>(nrow);
-        if (int(stats_ptr[4]) < min_area_threshold)
-        {
-            idx_to_remove.push_back(nrow);
-        }
-    }
 
-    for (size_t nrow = 0; nrow < labels.rows; nrow++)
-    {
-        int *labels_ptr = labels.ptr<int>(nrow);
-        uchar *morphological_ret_ptr = morphological_ret.ptr<uchar>(nrow);
-        for (size_t ncol = 0; ncol < labels.cols * labels.channels(); ncol++)
-        {
-            if (int(labels_ptr[ncol]) != 0)
-            {
-                if (isInVector(int(labels_ptr[ncol]), idx_to_remove))
-                {
-                    morphological_ret_ptr[ncol]=0;
-                }
-            }
-        }
-    }
-
-    this->sp_laneCluster->apply_lane_feats_cluster(morphological_ret,mat_instance_seg_result);
+    this->_remove_small_connect_components(labels,stats,morphological_ret);
+    // cv::imwrite("morphological_ret.jpg",morphological_ret);
+    // std::vector<std::vector<int>> lane_coords;
+    std::vector<inner_type::Lane> lane_coords;
+    this->sp_laneCluster_->apply_lane_feats_cluster(morphological_ret,mat_instance_seg_result,lane_coords);
     int aaa=1;
 
 

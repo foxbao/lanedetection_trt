@@ -25,14 +25,20 @@ class DBSCAN
 public:
 	DBSCAN();
 	void cluster(const std::vector<std::vector<float>> &lane_embedding_feats);
+	std::vector<int> labels_;
+	std::vector<int> unique_labels_;
+	std::vector<int> core_sample_indices_;
+	int num_clusters_;
 	
 
 private:
+	void clear_variables();
 	void calculatePts(std::vector<point> &dataset);
 	void calculateCorePts(std::vector<point> &dataset, std::vector<point> &corePoints);
 	void jointCorePts(std::vector<point> &corePoints);
 	void border(std::vector<point> &dataset, std::vector<point> &corePoints);
 	void output(std::vector<point> &dataset, std::vector<point> &corePoints);
+	void calLabels(const std::vector<point> &corePoints);
 	void fit_transform(const std::vector<std::vector<float>> &lane_embedding_feats, std::vector<std::vector<double>> &features);
 	float squareDistance(const point &a, const point &b);
 	void cluster(const std::vector<std::vector<double>> &features);
