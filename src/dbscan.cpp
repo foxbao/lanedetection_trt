@@ -78,7 +78,7 @@ void DBSCAN::calculatePts(std::vector<point> &dataset)
 {
 	int len = dataset.size();
 	//calculate the neighbours of pts which are inside eps
-	std::cout << "calculate pts" << std::endl;
+	// std::cout << "calculate pts" << std::endl;
 	for (int i = 0; i < len; i++)
 	{
 		for (int j = i + 1; j < len; j++)
@@ -94,7 +94,7 @@ void DBSCAN::calculatePts(std::vector<point> &dataset)
 
 void DBSCAN::calculateCorePts(std::vector<point> &dataset, std::vector<point> &corePoints)
 {
-	std::cout << "core point " << std::endl;
+	// std::cout << "core point " << std::endl;
 	// calculate the core points who has more than the threshold neighbours
 	for (int i = 0; i < dataset.size(); i++)
 	{
@@ -108,7 +108,7 @@ void DBSCAN::calculateCorePts(std::vector<point> &dataset, std::vector<point> &c
 
 void DBSCAN::jointCorePts(std::vector<point> &corePoints)
 {
-	std::cout << "joint core point" << std::endl;
+	// std::cout << "joint core point" << std::endl;
 	//joint core point
 	for (int i = 0; i < corePoints.size(); i++)
 	{
@@ -148,7 +148,7 @@ void DBSCAN::jointCorePts(std::vector<point> &corePoints)
 
 void DBSCAN::border(std::vector<point> &dataset, std::vector<point> &corePoints)
 {
-	std::cout << "border point,joint border point to core point" << std::endl;
+	// std::cout << "border point,joint border point to core point" << std::endl;
 	//border point,joint border point to core point
 	int len = dataset.size();
 	for (int i = 0; i < len; i++)
@@ -169,7 +169,7 @@ void DBSCAN::border(std::vector<point> &dataset, std::vector<point> &corePoints)
 
 void DBSCAN::output(std::vector<point> &dataset, std::vector<point> &corePoints)
 {
-	std::cout << "output" << std::endl;
+	// std::cout << "output" << std::endl;
 	//output
 	std::fstream clustering;
 	int len = dataset.size();

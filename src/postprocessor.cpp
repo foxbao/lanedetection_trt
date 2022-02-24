@@ -209,98 +209,18 @@ void ImgPostProcessor::processLane(const int *buffer_binary, const nvinfer1::Dim
     cv::Mat mat_instance_seg_result;
     this->_generateMatInstance(mat_instance_seg_result,buffer_instance,dim_instance);
 
-
     // cv::imwrite("generatedMatInstance.jpg",mat_instance_seg_result);
     // apply connect component to connect the areas
     cv::Mat labels, stats, centroids;
     this->_connect_components_analysis(morphological_ret, labels, stats, centroids);
-
     // remove the very small connected components
-
     this->_remove_small_connect_components(labels,stats,morphological_ret);
     // cv::imwrite("morphological_ret.jpg",morphological_ret);
-    // std::vector<std::vector<int>> lane_coords;
     std::vector<inner_type::Lane> lane_coords;
-    this->sp_laneCluster_->apply_lane_feats_cluster(morphological_ret,mat_instance_seg_result,lane_coords);
+    cv::Mat mask;
+    this->sp_laneCluster_->apply_lane_feats_cluster(morphological_ret,mat_instance_seg_result,lane_coords,mask);
     int aaa=1;
-
-
-
-    // cv::imwrite("morphological_ret_processed.jpg", morphological_ret);
-
-    // auto maxPosition=std::max_element(label_values.begin(),label_values.end());
-    // std::cout <<"max position"<<*maxPosition<<std::endl;
-    // int aaa = 1;
-
-    // std::cout<<img_pseudo<<std::endl;
-    // std::cout<<int(img_pseudo.at<uchar>(1 , 1))<<std::endl;
-    // int label_channels = labels.channels();
-    // std::cout<<labels<<std::endl;
-    // int img_pseudo_channels = img_pseudo.channels();
-    // std::cout<<int(labels.at<uchar>(161 , 181))<<std::endl;
-    // std::cout<<int(labels.at<uchar>(181 , 161))<<std::endl;
-    // for (int h = 0; h < labels.rows; ++h)
-    // {
-    //     for (int w = 0; w < labels.cols/2; ++w)
-    //     {
-    //         uchar *ptr = img_pseudo.ptr<uchar>(h, w);
-    //         *ptr = 254;
-    //         // if(int(labels.at<uchar>(h , w))!=0)
-    //         // {
-    //         //     uchar* ptr=binary_img.ptr<uchar>(h,w);
-    //         //     *ptr=254;
-    //         // }
-    //     }
-    // }
-    // cv::imwrite("img_pseudo.jpg", img_pseudo);
-    // int dadsf = 2;
-
-    // for (size_t nrow = 0; nrow < labels.rows; nrow++)
-    // {
-    //     uchar *data = labels.ptr<uchar>(nrow);
-    //     for(size_t ncol = 0; ncol < labels.cols * labels.channels(); ncol++)
-    //     {
-    //         if (0!=data[ncol])
-    //         {   std::cout<< nrow <<" "<<ncol <<" haha ";
-    //             std::cout << data[ncol] <<std::endl;
-    //         }
-
-    //     }
-
-    // }
-
-    // for (size_t nrow = 0; nrow < stats.rows; nrow++)
-    // {
-    //     uchar *data = stats.ptr<uchar>(nrow);
-    //     for(size_t ncol = 0; ncol < stats.cols * stats.channels(); ncol++)
-    //     {
-    //         std::cout << int( data[ncol] ) <<" ";
-
-    //     }
-    //     std::cout <<std::endl;
-
-    //     if(int( data[4] )<min_area_threshold)
-    //     {
-
-    //         for(int h = 0 ; h < labels.rows ; ++ h)
-    //         {
-    //             for(int w = 0 ; w < labels.cols ; ++ w)
-    //             {
-    //                 if (labels.at<uchar>(h , w) == nrow)
-    //                 {
-    //                     int aaa=1;
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
-
-    // for index, stat in enumerate(stats):
-    //     if stat[4] <= min_area_threshold:
-    //         idx = np.where(labels == index)
-    //         morphological_ret[idx] = 0
-
-    
+    // cv::imwrite("mask.jpg",mask);
 }
 
 int ImgPostProcessor::volume(util::PPM &ppm)
