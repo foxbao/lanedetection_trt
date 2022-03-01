@@ -1,0 +1,42 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../lib/include/nanoflann.hpp
+algorithm
+-
+array
+-
+cassert
+-
+cmath
+-
+cstdio
+-
+cstdlib
+-
+functional
+-
+limits
+-
+stdexcept
+-
+vector
+-
+
+/workspace/bao_files/my_tensor_RT/tensor_inference_lanenet/lanedetection_trt/lib/dbscan.cpp
+nanoflann.hpp
+/workspace/bao_files/my_tensor_RT/tensor_inference_lanenet/lanedetection_trt/lib/nanoflann.hpp
+vector
+-
+include/dbscan.hpp
+/workspace/bao_files/my_tensor_RT/tensor_inference_lanenet/lanedetection_trt/lib/include/dbscan.hpp
+
+/workspace/bao_files/my_tensor_RT/tensor_inference_lanenet/lanedetection_trt/lib/include/dbscan.hpp
+vector
+-
+
