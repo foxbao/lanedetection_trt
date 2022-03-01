@@ -66,7 +66,7 @@ void test_dbscan()
 
 int main(int argc, char **argv)
 {
-	test_dbscan();
+	// test_dbscan();
     if (argc < 3)
     {
         std::cout << "Please design config file and image folder!" << std::endl;

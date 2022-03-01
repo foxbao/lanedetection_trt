@@ -219,8 +219,7 @@ void ImgPostProcessor::processLane(const int *buffer_binary, const nvinfer1::Dim
     std::vector<inner_type::Lane> lane_coords;
     cv::Mat mask;
     this->sp_laneCluster_->apply_lane_feats_cluster(morphological_ret,mat_instance_seg_result,lane_coords,mask);
-    int aaa=1;
-    cv::imwrite("mask.jpg",mask);
+    // cv::imwrite("mask.jpg",mask);
 }
 
 int ImgPostProcessor::volume(util::PPM &ppm)

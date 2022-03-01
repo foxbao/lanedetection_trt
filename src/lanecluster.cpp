@@ -1,22 +1,14 @@
 #include "lanecluster.h"
 
-
+using namespace std;
 LaneCluster::LaneCluster()
 {
     sp_dbscan=std::make_shared<DBSCAN>();
 }
 
-void LaneCluster::apply_lane_feats_cluster(const cv::Mat &binary_seg_result, const cv::Mat &instance_seg_result,std::vector<inner_type::Lane> &lane_coords,cv::Mat &mask)
+
+void LaneCluster::_get_mask_lanecoord(const vector<int>& unique_labels,const vector<int>& db_labels,vector<inner_type::LanePoint>& coord,cv::Mat& mask,vector<inner_type::Lane> &lane_coords)
 {
-    std::vector<std::vector<double>> lane_embedding_feats;
-    std::vector<inner_type::LanePoint> coord;
-    std::vector<int> db_labels;
-    std::vector<int> unique_labels;
-    mask=cv::Mat(binary_seg_result.rows,binary_seg_result.cols,CV_8UC3,cv::Scalar(0,0,0));
-    this->_get_lane_embedding_feats(binary_seg_result, instance_seg_result,lane_embedding_feats,coord);
-    _embedding_feats_dbscan_cluster(lane_embedding_feats,db_labels,unique_labels);
-    
-    lane_coords.clear();
     for (int index_unique_label=0;index_unique_label<unique_labels.size();index_unique_label++)
     {
         inner_type::Lane lane;
@@ -36,10 +28,40 @@ void LaneCluster::apply_lane_feats_cluster(const cv::Mat &binary_seg_result, con
         }
         lane_coords.push_back(lane);
     }
+}
 
+void LaneCluster::apply_lane_feats_cluster(const cv::Mat &binary_seg_result, const cv::Mat &instance_seg_result,std::vector<inner_type::Lane> &lane_coords,cv::Mat &mask)
+{
+    std::vector<std::vector<double>> lane_embedding_feats;
+    std::vector<inner_type::LanePoint> coord;
+    std::vector<int> db_labels;
+    std::vector<int> unique_labels;
+    mask=cv::Mat(binary_seg_result.rows,binary_seg_result.cols,CV_8UC3,cv::Scalar(0,0,0));
+    this->_get_lane_embedding_feats(binary_seg_result, instance_seg_result,lane_embedding_feats,coord);
+    _embedding_feats_dbscan_cluster(lane_embedding_feats,db_labels,unique_labels);
+    
+    lane_coords.clear();
 
-    int bbbb=2;
+    _get_mask_lanecoord(unique_labels,db_labels,coord,mask,lane_coords);
+    // for (int index_unique_label=0;index_unique_label<unique_labels.size();index_unique_label++)
+    // {
+    //     inner_type::Lane lane;
+    //     int label=unique_labels[index_unique_label];
+    //     for (int index_label=0;index_label<db_labels.size();index_label++)
+    //     {
+    //         if (unique_labels[index_unique_label]==db_labels[index_label])
+    //         {
+    //             lane.pts.push_back(inner_type::LanePoint(coord[index_label].row,coord[index_label].col));
+    //             // mask.at<cv::Vec3b>(coord[index_label].row,coord[index_label].col)[0]=color_map_[index_unique_label];
 
+    //             mask.at<cv::Vec3b>(coord[index_label].row,coord[index_label].col)[0]=color_map_[index_unique_label][0];
+    //             mask.at<cv::Vec3b>(coord[index_label].row,coord[index_label].col)[1]=color_map_[index_unique_label][1];
+    //             mask.at<cv::Vec3b>(coord[index_label].row,coord[index_label].col)[2]=color_map_[index_unique_label][2];
+    //         }
+    //         // lane_coords.append(coord[idx])
+    //     }
+    //     lane_coords.push_back(lane);
+    // }
     
 
         // lane_coords = []
