@@ -1,4 +1,4 @@
-#include "lanecluster.h"
+#include "../includes/lanecluster.h"
 
 using namespace std;
 LaneCluster::LaneCluster()
@@ -32,7 +32,7 @@ void LaneCluster::_get_mask_lanecoord(const vector<int>& unique_labels,const vec
 
 void LaneCluster::apply_lane_feats_cluster(const cv::Mat &binary_seg_result, const cv::Mat &instance_seg_result,std::vector<inner_type::Lane> &lane_coords,cv::Mat &mask)
 {
-    std::vector<std::vector<double>> lane_embedding_feats;
+    std::vector<std::vector<float>> lane_embedding_feats;
     std::vector<inner_type::LanePoint> coord;
     std::vector<int> db_labels;
     std::vector<int> unique_labels;
@@ -78,15 +78,22 @@ void LaneCluster::apply_lane_feats_cluster(const cv::Mat &binary_seg_result, con
     int bbb=2;
 }
 
-void LaneCluster::_embedding_feats_dbscan_cluster(const std::vector<std::vector<double>> &lane_embedding_feats,std::vector<int> &db_labels,std::vector<int> &unique_labels)
+void LaneCluster::_embedding_feats_dbscan_cluster(const std::vector<std::vector<float>> &lane_embedding_feats,std::vector<int> &db_labels,std::vector<int> &unique_labels)
 {
-    sp_dbscan->cluster(lane_embedding_feats);
-    db_labels=sp_dbscan->labels_;
-    unique_labels=sp_dbscan->unique_labels_;
+    double eps=0.35;
+    int min_pts=100;
+    auto cluster=sp_dbscan->dbscan(lane_embedding_feats,eps,min_pts);
+    for (int i=0;i<cluster.size();i++)
+    {
+        unique_labels.push_back(i);
+    }
+    // sp_dbscan->cluster(lane_embedding_feats);
+    // db_labels=sp_dbscan->labels_;
+    // unique_labels=sp_dbscan->unique_labels_;
 }
 
 
-void LaneCluster::_get_lane_embedding_feats(const cv::Mat &binary_seg_result, const cv::Mat &instance_seg_result,std::vector<std::vector<double>> &lane_embedding_feats,std::vector<inner_type::LanePoint> &lane_coordinates)
+void LaneCluster::_get_lane_embedding_feats(const cv::Mat &binary_seg_result, const cv::Mat &instance_seg_result,std::vector<std::vector<float>> &lane_embedding_feats,std::vector<inner_type::LanePoint> &lane_coordinates)
 {
     for (size_t nrow = 0; nrow < binary_seg_result.rows; nrow++)
     {
@@ -100,7 +107,7 @@ void LaneCluster::_get_lane_embedding_feats(const cv::Mat &binary_seg_result, co
                 float r=instance_ptr[ncol][0];
                 float g=instance_ptr[ncol][1];
                 float b=instance_ptr[ncol][2];
-                std::vector<double> feat;
+                std::vector<float> feat;
                 feat.push_back(r);
                 feat.push_back(g);
                 feat.push_back(b);

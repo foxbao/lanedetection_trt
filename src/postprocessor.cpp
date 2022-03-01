@@ -1,5 +1,5 @@
-#include "postprocessor.h"
-#include "inner_types.h"
+#include "../includes/postprocessor.h"
+#include "../includes/inner_types.h"
 ImgPostProcessor::ImgPostProcessor()
 {
     min_area_threshold = 100;

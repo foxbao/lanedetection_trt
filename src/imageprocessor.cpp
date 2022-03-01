@@ -1,4 +1,4 @@
-#include "imageprocessor.h"
+#include "../includes/imageprocessor.h"
 
 void ImageProcessor::png2ppm(const char *input, const char *output)
 {
