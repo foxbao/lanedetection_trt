@@ -44,6 +44,7 @@ set(SOURCE_LANENET ./includes/common/logger.cpp ./includes/common/util.cpp src/l
 
 ADD_SUBDIRECTORY(lib bin)
 INCLUDE_DIRECTORIES(lib/include)
+INCLUDE_DIRECTORIES(includes)
 INCLUDE_DIRECTORIES(src)
 add_executable(lanenet_trt lanenet_trt.cpp ${SOURCE_LANENET})
 

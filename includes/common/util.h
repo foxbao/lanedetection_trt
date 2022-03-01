@@ -33,7 +33,8 @@ namespace util
         {
             if (obj)
             {
-                obj->destroy();
+                delete(obj);
+                // obj->destroy();
             }
         }
     };

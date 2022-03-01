@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/lanenet_trt",
-            "args": ["../config.yaml","../../lane_samples"],
+            "args": ["config.yaml","../lane_samples"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],

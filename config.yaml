@@ -1,7 +1,7 @@
 Lanenet:
-    model_file:    "../../lanenet.pth"
-    onnx_file:     "../../lanenet.onnx"
-    engine_file:   "../../lanenet.engine"
+    model_file:    "../lanenet.pth"
+    onnx_file:     "../lanenet.onnx"
+    engine_file:   "../lanenet.engine"
     # engine_file:   "./fcn-resnet101.engine"
     BATCH_SIZE:    1
     INPUT_CHANNEL: 3
