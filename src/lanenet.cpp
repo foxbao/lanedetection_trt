@@ -214,6 +214,7 @@ bool Lanenet::EngineInference(const std::vector<std::string> &image_list, void *
         // instance_image.calInstance(output_buffer_cpu_2.get());
         // instance_image.write();
     }
+    return true;
 
 }
 
