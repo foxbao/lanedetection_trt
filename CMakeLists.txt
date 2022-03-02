@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(lanenet_trt)
-set(CMAKE_BUILD_TYPE "Release")
+set(CMAKE_BUILD_TYPE "Debug")
 # set(CMAKE_BUILD_TYPE "Debug") 
 MESSAGE(STATUS "This is BINARY dir " ${PROJECT_BINARY_DIR})
 MESSAGE(STATUS "This is SOURCE dir " ${PROJECT_SOURCE_DIR})
@@ -35,6 +35,10 @@ set(COMMON_INCLUDE includes/common)
 set(YAML_INCLUDE includes/yaml-cpp/include)
 set(YAML_LIB_DIR includes/yaml-cpp/libs)
 
+# EIGEN
+find_package( Eigen3 REQUIRED ) 
+INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
+
 include_directories(${CUDA_INCLUDE_DIRS} ${TENSORRT_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS} ${COMMON_INCLUDE} ${YAML_INCLUDE})
 link_directories(${YAML_LIB_DIR})
 
@@ -49,4 +53,4 @@ INCLUDE_DIRECTORIES(src)
 add_executable(lanenet_trt lanenet_trt.cpp ${SOURCE_LANENET})
 
 TARGET_LINK_LIBRARIES(lanenet_trt ${OpenCV_LIBRARIES} ${CUDA_LIBRARIES} ${TENSORRT_LIBRARY} yaml-cpp)
-TARGET_LINK_LIBRARIES(lanenet_trt dbscan)
+TARGET_LINK_LIBRARIES(lanenet_trt dbscan polyfit)

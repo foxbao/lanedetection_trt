@@ -16,4 +16,6 @@ class LaneCluster
         void _get_lane_embedding_feats(const cv::Mat &binary_seg_result,const cv::Mat &instance_seg_result,std::vector<std::vector<float>> &lane_embedding_feats,std::vector<inner_type::LanePoint> &lane_coordinates);
         void _get_mask_lanecoord(const vector<int>& unique_labels,const vector<int>& db_labels,vector<inner_type::LanePoint>& coord,cv::Mat& mask,vector<inner_type::Lane> &lane_coords);
         std::shared_ptr<DBSCAN> sp_dbscan;
+        double eps_ ;
+        int min_pts_;
 };

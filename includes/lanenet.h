@@ -1,6 +1,4 @@
-#ifndef LANENET_TRT_LANENET_H
-#define LANENET_TRT_LANENET_H
-
+#pragma once
 #include <opencv2/opencv.hpp>
 
 #include "logger.h"
@@ -36,11 +34,11 @@ private:
     bool EngineInference(const std::vector<std::string> &image_list,void **buffers_gpu,
             const std::vector<int64_t> &bufferSize,const std::vector<nvinfer1::Dims> &data_dims, cudaStream_t stream);
 
-    std::vector<float> prepareImage(std::vector<cv::Mat> & image);
-    std::vector<cv::Mat> postProcess(const std::vector<cv::Mat> &vec_Mat, float *output, const int &outSize);
-    void plotImgs(const std::string &file_name_no_extension,std::shared_ptr<int>output_buffer_cpu_1,std::shared_ptr<float>output_buffer_cpu_2,const std::vector<nvinfer1::Dims> &data_dims,const cv::Mat &mask);
-    std::string onnx_file;
-    std::string engine_file;
+    std::vector<float> PrepareImage(std::vector<cv::Mat> & image);
+    std::vector<cv::Mat> PostProcess(const std::vector<cv::Mat> &vec_Mat, float *output, const int &outSize);
+    void PlotImgs(const std::string &file_name_no_extension,std::shared_ptr<int>output_buffer_cpu_1,std::shared_ptr<float>output_buffer_cpu_2,const std::vector<nvinfer1::Dims> &data_dims,const cv::Mat &mask);
+    std::string onnx_file_;
+    std::string engine_file_;
     int BATCH_SIZE;
     int INPUT_CHANNEL;
     int IMAGE_WIDTH;
@@ -50,23 +48,16 @@ private:
     int IMAGE_RESIZE_WIDTH;
     int IMAGE_RESIZE_HEIGHT;
     int CATEGORY;
-    std::vector<float> img_mean;
-    std::vector<float> img_std;
-    // nvinfer1::ICudaEngine *engine = nullptr;
-    util::UniquePtr<nvinfer1::IExecutionContext> context =nullptr;;
-    std::string m_foldername;
-    // nvinfer1::IExecutionContext *context = nullptr;
-    // std::vector<cv::Scalar> class_colors;
+    std::vector<float> img_mean_;
+    std::vector<float> img_std_;
+    util::UniquePtr<nvinfer1::IExecutionContext> context_ =nullptr;;
+    std::string foldername_;
 
-    // std::string mEngineFilename;                    //!< Filename of the serialized engine.
+    nvinfer1::Dims inputDims_;                      //!< The dimensions of the input to the network.
+    nvinfer1::Dims outputDims_;                     //!< The dimensions of the output to the network.
 
-    nvinfer1::Dims mInputDims;                      //!< The dimensions of the input to the network.
-    nvinfer1::Dims mOutputDims;                     //!< The dimensions of the output to the network.
-
-    util::UniquePtr<nvinfer1::ICudaEngine> mEngine; //!< The TensorRT engine used to run the network
-    std::shared_ptr<ImageProcessor> pImageProcessor;
-    std::shared_ptr<ImgPostProcessor> pImgPostProcessor= std::make_shared<ImgPostProcessor>();
-    void test_func(std::unique_ptr<int>output_buffer_cpu_1);
+    util::UniquePtr<nvinfer1::ICudaEngine> mEngine_; //!< The TensorRT engine used to run the network
+    std::shared_ptr<ImageProcessor> sp_ImageProcessor_;
+    std::shared_ptr<ImgPostProcessor> sp_ImgPostProcessor_;
 };
 
-#endif //LENET_TRT_LENET_H

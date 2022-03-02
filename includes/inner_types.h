@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
 #include <vector>
-
+#include<memory>
 
 namespace inner_type
 {
@@ -22,6 +22,7 @@ class Lane
     public:
         Lane();
         std::vector<inner_type::LanePoint> pts;
+        std::shared_ptr<std::pair<std::vector<int>,std::vector<int>>> GetPairXYVectorPtr() const;
     private:
         
 };
