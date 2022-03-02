@@ -16,7 +16,7 @@
 #include "NvInfer.h"
 #include "NvOnnxParser.h"
 #include "imageprocessor.h"
-
+#include "../includes/postprocessor.h"
 constexpr long long operator"" _MiB(long long unsigned val)
 {
     return val * (1 << 20);
@@ -38,6 +38,7 @@ private:
 
     std::vector<float> prepareImage(std::vector<cv::Mat> & image);
     std::vector<cv::Mat> postProcess(const std::vector<cv::Mat> &vec_Mat, float *output, const int &outSize);
+    void plotImgs(const std::string &file_name_no_extension,std::shared_ptr<int>output_buffer_cpu_1,std::shared_ptr<float>output_buffer_cpu_2,const std::vector<nvinfer1::Dims> &data_dims,const cv::Mat &mask);
     std::string onnx_file;
     std::string engine_file;
     int BATCH_SIZE;
@@ -63,7 +64,9 @@ private:
     nvinfer1::Dims mOutputDims;                     //!< The dimensions of the output to the network.
 
     util::UniquePtr<nvinfer1::ICudaEngine> mEngine; //!< The TensorRT engine used to run the network
-    std::unique_ptr<ImageProcessor> pImageProcessor;
+    std::shared_ptr<ImageProcessor> pImageProcessor;
+    std::shared_ptr<ImgPostProcessor> pImgPostProcessor= std::make_shared<ImgPostProcessor>();
+    void test_func(std::unique_ptr<int>output_buffer_cpu_1);
 };
 
 #endif //LENET_TRT_LENET_H

@@ -45,6 +45,8 @@ std::vector<std::string>readFolder(const std::string &image_path)
             image_names.push_back(temp);
             entry = readdir(dir);
         }
+
+        std::sort(image_names.begin(), image_names.end());
     }
     return image_names;
 }

@@ -12,7 +12,10 @@ CMakeFiles/lanenet_trt.dir/lanenet_trt.cpp.o: ../includes/common/logger.h
 CMakeFiles/lanenet_trt.dir/lanenet_trt.cpp.o: ../includes/common/logging.h
 CMakeFiles/lanenet_trt.dir/lanenet_trt.cpp.o: ../includes/common/util.h
 CMakeFiles/lanenet_trt.dir/lanenet_trt.cpp.o: ../includes/imageprocessor.h
+CMakeFiles/lanenet_trt.dir/lanenet_trt.cpp.o: ../includes/inner_types.h
+CMakeFiles/lanenet_trt.dir/lanenet_trt.cpp.o: ../includes/lanecluster.h
 CMakeFiles/lanenet_trt.dir/lanenet_trt.cpp.o: ../includes/lanenet.h
+CMakeFiles/lanenet_trt.dir/lanenet_trt.cpp.o: ../includes/postprocessor.h
 CMakeFiles/lanenet_trt.dir/lanenet_trt.cpp.o: ../lib/include/dbscan.hpp
 CMakeFiles/lanenet_trt.dir/lanenet_trt.cpp.o: /usr/local/cuda/include/builtin_types.h
 CMakeFiles/lanenet_trt.dir/lanenet_trt.cpp.o: /usr/local/cuda/include/crt/host_defines.h

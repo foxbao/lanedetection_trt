@@ -13,7 +13,10 @@ CMakeFiles/lanenet_trt.dir/lanenet_trt.cpp.o
  ../includes/common/logging.h
  ../includes/common/util.h
  ../includes/imageprocessor.h
+ ../includes/inner_types.h
+ ../includes/lanecluster.h
  ../includes/lanenet.h
+ ../includes/postprocessor.h
  ../lib/include/dbscan.hpp
  /usr/local/cuda/include/builtin_types.h
  /usr/local/cuda/include/crt/host_defines.h

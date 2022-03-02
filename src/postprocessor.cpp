@@ -188,19 +188,7 @@ void ImgPostProcessor::_remove_small_connect_components(const cv::Mat &labels, c
     }
 }
 
-// template <class T>
-// bool findValue(const cv::Mat &mat, T value) {
-//     for(int i = 0;i < mat.rows;i++) {
-//         const T* row = mat.ptr<T>(i);
-//         if(std::find(row, row + mat.cols, value) != row + mat.cols)
-//             return true;
-//     }
-//     return false;
-// }
-
-
-
-void ImgPostProcessor::processLane(const int *buffer_binary, const nvinfer1::Dims &dim_binary, const float *buffer_instance, const nvinfer1::Dims &dim_instance)
+void ImgPostProcessor::processLane(const int *buffer_binary, const nvinfer1::Dims &dim_binary, const float *buffer_instance, const nvinfer1::Dims &dim_instance,cv::Mat &mask)
 {
     util::PPM ppm_binary;
     this->generateBinarySegment(buffer_binary, dim_binary, ppm_binary); // binary output
@@ -217,7 +205,7 @@ void ImgPostProcessor::processLane(const int *buffer_binary, const nvinfer1::Dim
     this->_remove_small_connect_components(labels,stats,morphological_ret);
     // cv::imwrite("morphological_ret.jpg",morphological_ret);
     std::vector<inner_type::Lane> lane_coords;
-    cv::Mat mask;
+    // cv::Mat mask;
     this->sp_laneCluster_->apply_lane_feats_cluster(morphological_ret,mat_instance_seg_result,lane_coords,mask);
     // cv::imwrite("mask.jpg",mask);
 }

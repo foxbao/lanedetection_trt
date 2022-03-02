@@ -1,9 +1,10 @@
 #include "../includes/lanenet.h"
 #include "yaml-cpp/yaml.h"
 #include "common.hpp"
-#include "../includes/postprocessor.h"
+
 
 // #include "common.h"
+#include <sys/time.h>
 #include <vector>
 Lanenet::Lanenet(const std::string &config_file)
 {
@@ -27,7 +28,7 @@ Lanenet::Lanenet(const std::string &config_file)
     // for (cv::Scalar &class_color : class_colors)
     //     class_color = cv::Scalar(rand() % 255, rand() % 255, rand() % 255);
 
-    pImageProcessor=std::make_unique<ImageProcessor>();
+    pImageProcessor = std::make_unique<ImageProcessor>();
 }
 
 Lanenet::~Lanenet() = default;
@@ -46,14 +47,14 @@ void Lanenet::LoadEngine()
     std::vector<char> engineData(fsize);
     engineFile.read(engineData.data(), fsize);
     util::UniquePtr<nvinfer1::IRuntime> runtime{nvinfer1::createInferRuntime(sample::gLogger.getTRTLogger())};
-    mEngine.reset(runtime->deserializeCudaEngine(engineData.data(), fsize, nullptr));
+    // mEngine.reset(runtime->deserializeCudaEngine(engineData.data(), fsize, nullptr));
+    mEngine.reset(runtime->deserializeCudaEngine(engineData.data(), fsize));
     assert(mEngine.get() != nullptr);
 }
 
-
 bool Lanenet::InferenceFolder(const std::string &folder_name)
 {
-    m_foldername=folder_name;
+    m_foldername = folder_name;
     context = util::UniquePtr<nvinfer1::IExecutionContext>(mEngine->createExecutionContext());
     if (!context)
     {
@@ -71,7 +72,7 @@ bool Lanenet::InferenceFolder(const std::string &folder_name)
 
     int nbBindings = mEngine->getNbBindings();
     void *buffers_gpu[nbBindings];
-    
+
     std::vector<int64_t> bufferSize;
     bufferSize.resize(nbBindings);
 
@@ -102,11 +103,11 @@ bool Lanenet::InferenceFolder(const std::string &folder_name)
 
     std::vector<std::string> image_list = readFolder(folder_name);
 
-    this->EngineInference(image_list, buffers_gpu,bufferSize, data_dims,stream);
+    this->EngineInference(image_list, buffers_gpu, bufferSize, data_dims, stream);
 
     // Free CUDA resources
     cudaStreamDestroy(stream);
-    this->context=nullptr;
+    this->context = nullptr;
     cudaFree(buffers_gpu[0]);
     cudaFree(buffers_gpu[1]);
     cudaFree(buffers_gpu[2]);
@@ -115,14 +116,29 @@ bool Lanenet::InferenceFolder(const std::string &folder_name)
     return true;
 }
 
+void Lanenet::plotImgs(const std::string &file_name_no_extension,std::shared_ptr<int>output_buffer_cpu_1,std::shared_ptr<float>output_buffer_cpu_2,const std::vector<nvinfer1::Dims> &data_dims,const cv::Mat &mask)
+{
+    std::string binary_file_path = m_foldername + "_binary/" + file_name_no_extension + ".ppm";
+    util::PPM ppm_binary;
+    pImgPostProcessor->generateBinarySegmentThree(output_buffer_cpu_1.get(), data_dims[2], ppm_binary); // binary output
+    pImgPostProcessor->write(binary_file_path, ppm_binary);
+
+    std::string instance_file_path = m_foldername + "_instance/" + file_name_no_extension + ".ppm";
+    util::PPM ppm_instance;
+    pImgPostProcessor->calInstance(output_buffer_cpu_2.get(), data_dims[3], ppm_instance); // binary output
+    pImgPostProcessor->write(instance_file_path, ppm_instance);
+
+    std::string mask_file_path = m_foldername + "_mask/" + file_name_no_extension + ".jpg";
+    cv::imwrite(mask_file_path, mask);
+}
 
 bool Lanenet::EngineInference(const std::vector<std::string> &image_list, void **buffers_gpu,
-                     const std::vector<int64_t> &bufferSize, const std::vector<nvinfer1::Dims> &data_dims,cudaStream_t stream)
+                              const std::vector<int64_t> &bufferSize, const std::vector<nvinfer1::Dims> &data_dims, cudaStream_t stream)
 {
 
-    auto output_buffer_cpu_0 = std::unique_ptr<float>{new float[bufferSize[1]]};
-    auto output_buffer_cpu_1 = std::unique_ptr<int>{new int[bufferSize[2]]};
-    auto output_buffer_cpu_2 = std::unique_ptr<float>{new float[bufferSize[3]]};
+    auto output_buffer_cpu_0 = std::shared_ptr<float>{new float[bufferSize[1]]};
+    auto output_buffer_cpu_1 = std::shared_ptr<int>{new int[bufferSize[2]]};
+    auto output_buffer_cpu_2 = std::shared_ptr<float>{new float[bufferSize[3]]};
 
     int index = 0;
     std::string file_name_no_extension;
@@ -130,15 +146,17 @@ bool Lanenet::EngineInference(const std::vector<std::string> &image_list, void *
     std::string input_file_ppm_name;
     util::PPM ppm;
 
-    auto pImgPostProcessor=std::make_unique<ImgPostProcessor>();
+    auto pImgPostProcessor = std::make_unique<ImgPostProcessor>();
+    struct timeval t1, t2;
+    gettimeofday(&t1, NULL);
     for (const std::string &image_name : image_list)
     {
         index++;
         std::cout << "Processing: " << image_name << std::endl;
         file_name_no_extension = util::get_file_name_no_extension(image_name);
-        input_file_png_name = m_foldername+"/" + file_name_no_extension + ".png";
-        input_file_ppm_name = m_foldername+"_ppm/"+ file_name_no_extension + ".ppm";
-        pImageProcessor->png2ppm(input_file_png_name.c_str(), ppm,IMAGE_RESIZE_HEIGHT,IMAGE_RESIZE_WIDTH);
+        input_file_png_name = m_foldername + "/" + file_name_no_extension + ".png";
+        input_file_ppm_name = m_foldername + "_ppm/" + file_name_no_extension + ".ppm";
+        pImageProcessor->png2ppm(input_file_png_name.c_str(), ppm, IMAGE_RESIZE_HEIGHT, IMAGE_RESIZE_WIDTH);
 
         auto input_image{util::RGBImageReader(input_file_ppm_name, data_dims[0], this->img_mean, this->img_std)};
 
@@ -163,7 +181,6 @@ bool Lanenet::EngineInference(const std::vector<std::string> &image_list, void *
             return false;
         }
 
-
         if (cudaMemcpyAsync(output_buffer_cpu_0.get(), buffers_gpu[1], bufferSize[1], cudaMemcpyDeviceToHost, stream) != cudaSuccess)
         {
             gLogError << "ERROR: CUDA memory copy of output failed, size = " << bufferSize[1] << " bytes" << std::endl;
@@ -185,36 +202,33 @@ bool Lanenet::EngineInference(const std::vector<std::string> &image_list, void *
 
         // instance_pred=output_buffers[2].reshape((3,image_height, image_width))* 255
         // Plot the semantic segmentation predictions of 21 classes in a colormap image and write to file
-        const int num_classes{21};
-        const std::vector<int> palette{(0x1 << 25) - 1, (0x1 << 15) - 1, (0x1 << 21) - 1};
+        // const int num_classes{21};
+        // const std::vector<int> palette{(0x1 << 25) - 1, (0x1 << 15) - 1, (0x1 << 21) - 1};
         // std::string output_filename = "../lane_samples/output.ppm";
-        std::string binary_file_path = m_foldername+"_result/output_" + file_name_no_extension + ".ppm";
 
-        pImgPostProcessor->processLane(output_buffer_cpu_1.get(),data_dims[2],output_buffer_cpu_2.get(),data_dims[3]);
-        
-        
-        
-        util::PPM ppm_binary;
-        pImgPostProcessor->generateBinarySegmentThree(output_buffer_cpu_1.get(),data_dims[2],ppm_binary);// binary output
-        pImgPostProcessor->write(binary_file_path,ppm_binary);
+        cv::Mat mask;
+        pImgPostProcessor->processLane(output_buffer_cpu_1.get(), data_dims[2], output_buffer_cpu_2.get(), data_dims[3], mask);
 
-        std::string instance_file_path = m_foldername+"_result/output_instance_" + file_name_no_extension + ".ppm";
-        util::PPM ppm_instance;
-        pImgPostProcessor->calInstance(output_buffer_cpu_2.get(),data_dims[3],ppm_instance);// binary output
-        pImgPostProcessor->write(instance_file_path,ppm_instance);
+        bool plot = true;
+        if (plot)
+        {
+            this->plotImgs(file_name_no_extension,output_buffer_cpu_1,output_buffer_cpu_2,data_dims,mask);
+        }
 
-
-
-        // auto output_image{PostProcessor(output_file_path, data_dims[2], palette, num_classes)};
-        // output_image.processLane(output_buffer_cpu_1.get());
-        // output_image.write();
-
-        // std::string instance_file_path = "../../lane_samples_result/output_instance_" + file_name_no_extension + ".ppm";
-        // auto instance_image{PostProcessor(instance_file_path, data_dims[3], palette, num_classes)};
-        // instance_image.calInstance(output_buffer_cpu_2.get());
-        // instance_image.write();
+        // lane line fit
     }
-    return true;
 
+    gettimeofday(&t2, NULL);
+    double deltaT = (t2.tv_sec - t1.tv_sec) * 1000000 + t2.tv_usec - t1.tv_usec;
+    double deltaTsec = deltaT / 1000000;
+    std::cout << "time_comsumed:" << deltaT / 1000000 << std::endl;
+    std::cout << "FPS:" << index / deltaTsec;
+
+    return true;
 }
 
+
+void Lanenet::test_func(std::unique_ptr<int>output_buffer_cpu_1)
+{
+
+}
