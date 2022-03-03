@@ -1,10 +1,11 @@
 #include "../includes/postprocessor.h"
 #include "../includes/inner_types.h"
+
 ImgPostProcessor::ImgPostProcessor()
 {
     min_area_threshold_ = 100;
     sp_laneCluster_ = std::make_shared<LaneCluster>();
-    sp_polyfit_=std::make_shared<PolyFit>();
+    sp_polyfit_ = std::make_shared<PolyFit>();
 }
 void ImgPostProcessor::GenerateBinarySegmentThree(const int *buffer, const nvinfer1::Dims &dim, util::PPM &dst_ppm)
 {
@@ -98,11 +99,11 @@ cv::Mat ImgPostProcessor::MorphologicalProcess(const cv::Mat &image, int kernel_
     return closing;
 }
 
-void ImgPostProcessor::GenerateMatInstance(cv::Mat &mat_instance_seg_result,const float *buffer_instance, const nvinfer1::Dims &dim_instance)
+void ImgPostProcessor::GenerateMatInstance(cv::Mat &mat_instance_seg_result, const float *buffer_instance, const nvinfer1::Dims &dim_instance)
 {
-    int H=dim_instance.d[2];//height
-    int W=dim_instance.d[3];//width
-    mat_instance_seg_result=cv::Mat(H,W,CV_8UC3);
+    int H = dim_instance.d[2]; //height
+    int W = dim_instance.d[3]; //width
+    mat_instance_seg_result = cv::Mat(H, W, CV_8UC3);
     int idx;
     cv::MatIterator_<cv::Vec3b> it, end;
 
@@ -110,9 +111,9 @@ void ImgPostProcessor::GenerateMatInstance(cv::Mat &mat_instance_seg_result,cons
     for (it = mat_instance_seg_result.begin<cv::Vec3b>(), end = mat_instance_seg_result.end<cv::Vec3b>(), idx = 0; it != end; ++it, ++idx)
     {
 
-        (*it)[0]=buffer_instance[idx]*255;
-        (*it)[1]=buffer_instance[idx+H*W]*255;
-        (*it)[2]=buffer_instance[idx+2*H*W]*255;
+        (*it)[0] = buffer_instance[idx] * 255;
+        (*it)[1] = buffer_instance[idx + H * W] * 255;
+        (*it)[2] = buffer_instance[idx + 2 * H * W] * 255;
     }
 }
 
@@ -130,8 +131,6 @@ void ImgPostProcessor::ConnectComponentsAnalysis(const cv::Mat &image, cv::Mat &
     cv::connectedComponentsWithStats(gray_image, labels, stats, centroids, 8);
 }
 
-
-
 bool ImgPostProcessor::IsInVector(const int &value, std::vector<int> &vec)
 {
     std::vector<int>::iterator ret;
@@ -146,8 +145,7 @@ bool ImgPostProcessor::IsInVector(const int &value, std::vector<int> &vec)
     }
 }
 
-
-void ImgPostProcessor::RemoveSmallConnectComponents(const cv::Mat &labels, const cv::Mat &stats,cv::Mat &morphological_ret)
+void ImgPostProcessor::RemoveSmallConnectComponents(const cv::Mat &labels, const cv::Mat &stats, cv::Mat &morphological_ret)
 {
     std::vector<int> idx_to_remove;
     for (size_t nrow = 0; nrow < stats.rows; nrow++)
@@ -169,31 +167,37 @@ void ImgPostProcessor::RemoveSmallConnectComponents(const cv::Mat &labels, const
             {
                 if (IsInVector(int(labels_ptr[ncol]), idx_to_remove))
                 {
-                    morphological_ret_ptr[ncol]=0;
+                    morphological_ret_ptr[ncol] = 0;
                 }
             }
         }
     }
 }
 
-void ImgPostProcessor::ProcessLane(const int *buffer_binary, const nvinfer1::Dims &dim_binary, const float *buffer_instance, const nvinfer1::Dims &dim_instance,cv::Mat &mask,std::vector<inner_type::Lane> &lanes_coords)
+void ImgPostProcessor::ProcessLane(const int *buffer_binary,
+                                   const nvinfer1::Dims &dim_binary,
+                                   const float *buffer_instance,
+                                   const nvinfer1::Dims &dim_instance,
+                                   cv::Mat &mask,
+                                   std::vector<inner_type::Lane> &lanes_coords,
+                                   std::vector<std::vector<double>> &fit_params)
 {
     util::PPM ppm_binary;
     this->GenerateBinarySegment(buffer_binary, dim_binary, ppm_binary); // binary output
     // apply image morphology operation to fill in the hold and reduce the small area
     cv::Mat morphological_ret = this->MorphologicalProcess(ppm_binary);
     cv::Mat mat_instance_seg_result;
-    this->GenerateMatInstance(mat_instance_seg_result,buffer_instance,dim_instance);
+    this->GenerateMatInstance(mat_instance_seg_result, buffer_instance, dim_instance);
     // apply connect component to connect the areas
     cv::Mat labels, stats, centroids;
     this->ConnectComponentsAnalysis(morphological_ret, labels, stats, centroids);
     // remove the very small connected components
-    this->RemoveSmallConnectComponents(labels,stats,morphological_ret);
-    this->sp_laneCluster_->apply_lane_feats_cluster(morphological_ret,mat_instance_seg_result,lanes_coords,mask);
+    this->RemoveSmallConnectComponents(labels, stats, morphological_ret);
+    // cv::imwrite("binary.jpg",);
+    this->sp_laneCluster_->ApplyLaneFeatsCluster(morphological_ret, mat_instance_seg_result, lanes_coords, mask);
 
-
-    std::vector<std::vector<double>> fit_params;
-    this->LineFit(lanes_coords,fit_params);
+    
+    this->LineFit(lanes_coords, fit_params);
 }
 
 int ImgPostProcessor::volume(util::PPM &ppm)
@@ -211,20 +215,17 @@ void ImgPostProcessor::WriteImg(const std::string &filename, util::PPM ppm)
     outfile << ppm.magic << " " << ppm.w << " " << ppm.h << " " << ppm.max << std::endl;
     outfile.write(reinterpret_cast<char *>(ppm.buffer.data()), volume(ppm));
     outfile.close();
-
-
-    
 }
 
-void ImgPostProcessor::LineFit(const std::vector<inner_type::Lane>& lanes_coords,std::vector<std::vector<double>>& fit_params)
+void ImgPostProcessor::LineFit(const std::vector<inner_type::Lane> &lanes_coords, std::vector<std::vector<double>> &fit_params)
 {
-    for(const auto& lane:lanes_coords)
+    for (const auto &lane : lanes_coords)
     {
         std::vector<double> fit_param;
-        std::shared_ptr<std::pair<std::vector<int>,std::vector<int>>> sp_pair=lane.GetPairXYVectorPtr();
-        std::vector<double> doubleVecX(sp_pair->first.begin(), sp_pair->first.end());
-        std::vector<double> doubleVecY(sp_pair->second.begin(), sp_pair->second.end());
-        sp_polyfit_->polyfit(doubleVecX,doubleVecY,fit_param,2);
+        std::shared_ptr<std::pair<std::vector<int>, std::vector<int>>> sp_pair = lane.GetPairRowColVectorPtr();
+        std::vector<double> vec_row(sp_pair->first.begin(), sp_pair->first.end());
+        std::vector<double> vec_col(sp_pair->second.begin(), sp_pair->second.end());
+        sp_polyfit_->polyfit(vec_row, vec_col, fit_param, 2);
         fit_params.push_back(fit_param);
     }
 }

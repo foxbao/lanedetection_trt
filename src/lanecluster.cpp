@@ -1,5 +1,5 @@
 #include "../includes/lanecluster.h"
-
+#include <numeric>
 using namespace std;
 LaneCluster::LaneCluster()
 {
@@ -8,7 +8,7 @@ LaneCluster::LaneCluster()
     min_pts_ = 100;
 }
 
-void LaneCluster::_get_mask_lanecoord(const vector<int> &unique_labels, const vector<int> &db_labels, vector<inner_type::LanePoint> &coord, cv::Mat &mask, vector<inner_type::Lane> &lane_coords)
+void LaneCluster::GetMaskLanecoord(const vector<int> &unique_labels, const vector<int> &db_labels, vector<inner_type::LanePoint> &coord, cv::Mat &mask, vector<inner_type::Lane> &lane_coords)
 {
     for (size_t index_unique_label = 0; index_unique_label < unique_labels.size(); index_unique_label++)
     {
@@ -18,32 +18,35 @@ void LaneCluster::_get_mask_lanecoord(const vector<int> &unique_labels, const ve
         {
             if (unique_labels[index_unique_label] == db_labels[index_label])
             {
-                lane.pts.push_back(inner_type::LanePoint(coord[index_label].row, coord[index_label].col));
-                mask.at<cv::Vec3b>(coord[index_label].row, coord[index_label].col)[0] = color_map_[index_unique_label][0];
-                mask.at<cv::Vec3b>(coord[index_label].row, coord[index_label].col)[1] = color_map_[index_unique_label][1];
-                mask.at<cv::Vec3b>(coord[index_label].row, coord[index_label].col)[2] = color_map_[index_unique_label][2];
+                lane.pts.push_back(inner_type::LanePoint(coord[index_label].row_, coord[index_label].col_));
+                mask.at<cv::Vec3b>(coord[index_label].row_, coord[index_label].col_)[0] = color_map_[index_unique_label][0];
+                mask.at<cv::Vec3b>(coord[index_label].row_, coord[index_label].col_)[1] = color_map_[index_unique_label][1];
+                mask.at<cv::Vec3b>(coord[index_label].row_, coord[index_label].col_)[2] = color_map_[index_unique_label][2];
             }
         }
         lane_coords.push_back(lane);
     }
 }
 
-void LaneCluster::apply_lane_feats_cluster(const cv::Mat &binary_seg_result, const cv::Mat &instance_seg_result, std::vector<inner_type::Lane> &lane_coords, cv::Mat &mask)
+void LaneCluster::ApplyLaneFeatsCluster(const cv::Mat &binary_seg_result, const cv::Mat &instance_seg_result, std::vector<inner_type::Lane> &lane_coords, cv::Mat &mask)
 {
     std::vector<std::vector<float>> lane_embedding_feats;
     std::vector<inner_type::LanePoint> coord;
     std::vector<int> db_labels;
     std::vector<int> unique_labels;
     mask = cv::Mat(binary_seg_result.rows, binary_seg_result.cols, CV_8UC3, cv::Scalar(0, 0, 0));
-    this->_get_lane_embedding_feats(binary_seg_result, instance_seg_result, lane_embedding_feats, coord);
-    this->_embedding_feats_dbscan_cluster(lane_embedding_feats, db_labels, unique_labels);
+    this->GetLaneEmbeddingFeats(binary_seg_result, instance_seg_result, lane_embedding_feats, coord);
+    this->EmbeddingFeatsDbscanCluster(lane_embedding_feats, db_labels, unique_labels);
     lane_coords.clear();
-    this->_get_mask_lanecoord(unique_labels, db_labels, coord, mask, lane_coords);
+    this->GetMaskLanecoord(unique_labels, db_labels, coord, mask, lane_coords);
 }
 
-void LaneCluster::_embedding_feats_dbscan_cluster(const std::vector<std::vector<float>> &lane_embedding_feats, std::vector<int> &db_labels, std::vector<int> &unique_labels)
+void LaneCluster::EmbeddingFeatsDbscanCluster(const std::vector<std::vector<float>> &lane_embedding_feats, std::vector<int> &db_labels, std::vector<int> &unique_labels)
 {
-    auto clusters = sp_dbscan->dbscan(lane_embedding_feats, eps_, min_pts_);
+    // normalize the feature, which mean [0,255]->[-1,1]
+    std::vector<std::vector<float>> features;
+    FitTransform(lane_embedding_feats, features);
+    auto clusters = sp_dbscan->dbscan(features, eps_, min_pts_);
 
     for (size_t i = 0; i < clusters.size(); i++)
     {
@@ -59,7 +62,7 @@ void LaneCluster::_embedding_feats_dbscan_cluster(const std::vector<std::vector<
     }
 }
 
-void LaneCluster::_get_lane_embedding_feats(const cv::Mat &binary_seg_result, const cv::Mat &instance_seg_result, std::vector<std::vector<float>> &lane_embedding_feats, std::vector<inner_type::LanePoint> &lane_coordinates)
+void LaneCluster::GetLaneEmbeddingFeats(const cv::Mat &binary_seg_result, const cv::Mat &instance_seg_result, std::vector<std::vector<float>> &lane_embedding_feats, std::vector<inner_type::LanePoint> &lane_coordinates)
 {
     for (size_t nrow = 0; nrow < binary_seg_result.rows; nrow++)
     {
@@ -79,4 +82,44 @@ void LaneCluster::_get_lane_embedding_feats(const cv::Mat &binary_seg_result, co
             }
         }
     }
+}
+
+void LaneCluster::FitTransform(const std::vector<std::vector<float>> &lane_embedding_feats, std::vector<std::vector<float>> &features)
+{
+	int channel_num = 3;
+	std::vector<float> channels[channel_num];
+	std::vector<float> features_channels[channel_num]; // vector<int>* p;
+	for (auto feat : lane_embedding_feats)
+	{
+		for (int i = 0; i < feat.size(); i++)
+		{
+			channels[i].push_back(feat[i]);
+		}
+	}
+	int szChannel = channels->size();
+	for (int i = 0; i < channel_num; i++)
+	{
+		// calculate mean and stdev
+		float sum = std::accumulate(std::begin(channels[i]), std::end(channels[i]), 0.0);
+		float mean = sum / channels[i].size(); //mean
+
+		float accum = 0.0;
+		std::for_each(std::begin(channels[i]), std::end(channels[i]), [&](const float d)
+					  { accum += (d - mean) * (d - mean); });
+		float stdev = sqrt(accum / (channels[i].size() - 1)); //dev
+		// use mean and stdev to transform the data to [0,1]
+		for (auto channel_value : channels[i])
+		{
+			features_channels[i].push_back((channel_value - mean) / stdev);
+		}
+	}
+	int szemb = lane_embedding_feats.size();
+	for (int i = 0; i < lane_embedding_feats.size(); i++)
+	{
+		std::vector<float> feature;
+		feature.push_back(features_channels[0][i]);
+		feature.push_back(features_channels[1][i]);
+		feature.push_back(features_channels[2][i]);
+		features.push_back(feature);
+	}
 }

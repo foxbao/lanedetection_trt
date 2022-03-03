@@ -1,8 +1,7 @@
 #include "../includes/lanenet.h"
 #include "yaml-cpp/yaml.h"
 #include "common.hpp"
-
-// #include "common.h"
+#include <cassert>
 #include <sys/time.h>
 #include <vector>
 #include <opencv2/opencv.hpp>
@@ -92,7 +91,6 @@ bool Lanenet::InferenceFolder(const std::string &folder_name)
     std::string output_label = "output";
     std::string input_label = "input";
 
-    
     // allocate gpu memories
     std::vector<nvinfer1::Dims> data_dims;
     for (size_t i = 0; i < nbBindings; ++i)
@@ -130,83 +128,104 @@ bool Lanenet::InferenceFolder(const std::string &folder_name)
     return true;
 }
 
-
-void Lanenet::Overlap(const int *buffer, int H,int W, cv::Mat &resized_img)
-{
-    // int H=dim.d[2];
-    // int W=dim.d[3];
-
-    if(resized_img.cols!=W)
-    {
-        return;
-    }
-
-    if(resized_img.rows!=H)
-    {
-        return;
-    }
-
-    cv::MatIterator_<cv::Vec3b> it, end;
-    it = resized_img.begin<cv::Vec3b>();
-    end = resized_img.end<cv::Vec3b>();
-    for (int j = 0; j < H*W,it != end; ++j,++it)
-    {
-        // std::cout<<buffer[j]<<std::endl;
-        if(0!=buffer[j])
-        {
-            (*it)[0]=0;//Blue
-            (*it)[1]=255;//Green
-            (*it)[2]=0;//Red
-        }
-    }
-
-}
-
-
-void Lanenet::PlotImgs(const std::string &file_name_no_extension, std::shared_ptr<int> output_buffer_cpu_1, std::shared_ptr<float> output_buffer_cpu_2, const std::vector<nvinfer1::Dims> &data_dims, const cv::Mat &mask, cv::Mat &resized_img)
+void Lanenet::PlotImgs(const std::string &file_name_no_extension,
+                       std::shared_ptr<int> output_buffer_cpu_1,
+                       std::shared_ptr<float> output_buffer_cpu_2,
+                       const std::vector<nvinfer1::Dims> &data_dims,
+                       const cv::Mat &mask,
+                       cv::Mat &resized_img,
+                       std::vector<inner_type::Lane> &lanes_coords,
+                       std::vector<std::vector<double>> &fit_params)
 {
     // cv2.FONT_HERSHEY_SIMPLEX
-    auto font=cv::FONT_HERSHEY_SIMPLEX;
+    auto font = cv::FONT_HERSHEY_SIMPLEX;
+    int thickness = 2;
+    // binary
     std::string binary_file_path = foldername_ + "_binary/" + file_name_no_extension + ".ppm";
     util::PPM ppm_binary;
     sp_ImgPostProcessor_->GenerateBinarySegmentThree(output_buffer_cpu_1.get(), data_dims[2], ppm_binary); // binary output
     sp_ImgPostProcessor_->WriteImg(binary_file_path, ppm_binary);
     cv::Mat mat_binary;
-    sp_ImageProcessor_->PPM2Mat(ppm_binary,mat_binary);
+    sp_ImageProcessor_->PPM2Mat(ppm_binary, mat_binary);
+    cv::putText(mat_binary, "binary", cv::Point(200, 20), font, 1.0, cv::Scalar(255, 255, 255), thickness);
 
-    std::string instance_file_path = foldername_ + "_instance/" + file_name_no_extension + ".ppm";
+    // instance
+    std::string instance_file_path = foldername_ + "_instance/" + file_name_no_extension + ".jpg";
     util::PPM ppm_instance;
     sp_ImgPostProcessor_->CalInstance(output_buffer_cpu_2.get(), data_dims[3], ppm_instance); // binary output
     // sp_ImgPostProcessor_->WriteImg(instance_file_path, ppm_instance);
 
     cv::Mat mat_instance;
-    sp_ImageProcessor_->PPM2Mat(ppm_instance,mat_instance);
-    cv::putText(mat_instance,"instance",cv::Point(200,20),font,1.0,cv::Scalar(255,255,255),1);
+    sp_ImageProcessor_->PPM2Mat(ppm_instance, mat_instance);
+    cv::putText(mat_instance, "instance", cv::Point(200, 20), font, 1.0, cv::Scalar(255, 255, 255), thickness);
+    cv::imwrite(instance_file_path, mat_instance);
 
-    cv::putText(mask,"instance+binary",cv::Point(200,20),font,1.0,cv::Scalar(255,255,255),1);
+    // mask
+    cv::putText(mask, "cluster", cv::Point(200, 20), font, 1.0, cv::Scalar(255, 255, 255), thickness);
     std::string mask_file_path = foldername_ + "_mask/" + file_name_no_extension + ".jpg";
     // cv::imwrite(mask_file_path, mask);
-    
-    std::string combined_file_path = foldername_ + "_combined/" + file_name_no_extension + ".jpg";
-    sp_ImageProcessor_->Overlap(output_buffer_cpu_1.get(), data_dims[2].d[2],data_dims[2].d[3], resized_img);
-    cv::putText(resized_img,"binary",cv::Point(200,20),font,1.0,cv::Scalar(255,255,255),1);
 
-    std::vector<cv::Mat>vImgs;
+    // combined fitted
+    std::string combined_file_path = foldername_ + "_combined/" + file_name_no_extension + ".jpg";
+
+    // for (auto fit_param : fit_params)
+    // {
+    //     fit_param[0];
+    //     fit_param[1];
+    //     fit_param[2];
+    //     for (int row = 100; row < resized_img.rows; row=row+10)
+    //     {
+    //         int col=fit_param[0]+fit_param[1]*row+fit_param[2]*row*row;
+    //         if (col<resized_img.cols)
+    //         {
+    //             cv::circle(resized_img,cv::Point(col,row),1,cv::Scalar(0,255,0),2);
+    //         }
+            
+    //     }
+    // }
+    // sp_ImageProcessor_->Overlap(output_buffer_cpu_1.get(), data_dims[2].d[2], data_dims[2].d[3], resized_img);
+    cv::putText(resized_img, "fitted", cv::Point(200, 20), font, 1.0, cv::Scalar(255, 255, 255), thickness);
+
+    int idx_lane = 0;
+    for (auto&& lane : lanes_coords)
+    {
+        int row_start=lane.pts[0].row_;
+        for (int row = row_start; row < resized_img.rows; row=row+10)
+        {
+            int col=fit_params[idx_lane][0]+fit_params[idx_lane][1]*row+fit_params[idx_lane][2]*row*row;
+            if (col<resized_img.cols)
+            {
+                cv::circle(resized_img,cv::Point(col,row),1,cv::Scalar(0,255,0),2);
+            }
+        }
+
+        auto position = lane.pts[int(lane.pts.size() / 2)];
+        cv::putText(resized_img, "line" + std::to_string(idx_lane), cv::Point(position.col_, position.row_), font, 0.5, cv::Scalar(255, 255, 255), 1);
+        idx_lane++;
+    }
+
+
+
+    std::vector<cv::Mat> vImgs;
     vImgs.push_back(resized_img);
+    vImgs.push_back(mat_binary);
     vImgs.push_back(mat_instance);
     vImgs.push_back(mask);
     cv::Mat FeatureMat;
-    cv::hconcat(vImgs,FeatureMat);
-    cv::imwrite(combined_file_path,FeatureMat);
+    cv::hconcat(vImgs, FeatureMat);
+    cv::imwrite(combined_file_path, FeatureMat);
 }
 
-bool Lanenet::EngineInference(const std::vector<std::string> &image_list, void **buffers_gpu,
-                              const std::vector<int64_t> &bufferSize, const std::vector<nvinfer1::Dims> &data_dims, cudaStream_t stream)
+bool Lanenet::EngineInference(const std::vector<std::string> &image_list,
+                              void **buffers_gpu,
+                              const std::vector<int64_t> &bufferSize,
+                              const std::vector<nvinfer1::Dims> &data_dims,
+                              cudaStream_t stream)
 {
 
-    auto output_buffer_cpu_0 = std::shared_ptr<float>{new float[bufferSize[1]]};//
-    auto output_buffer_cpu_1 = std::shared_ptr<int>{new int[bufferSize[2]]};//
-    auto output_buffer_cpu_2 = std::shared_ptr<float>{new float[bufferSize[3]]};//
+    auto output_buffer_cpu_0 = std::shared_ptr<float>{new float[bufferSize[1]]}; //
+    auto output_buffer_cpu_1 = std::shared_ptr<int>{new int[bufferSize[2]]};     //
+    auto output_buffer_cpu_2 = std::shared_ptr<float>{new float[bufferSize[3]]}; //
 
     int index = 0;
     std::string file_name_no_extension;
@@ -257,13 +276,20 @@ bool Lanenet::EngineInference(const std::vector<std::string> &image_list, void *
         cudaStreamSynchronize(stream);
         std::vector<inner_type::Lane> lanes_coords;
         cv::Mat mask;
-        sp_ImgPostProcessor_->ProcessLane(output_buffer_cpu_1.get(), data_dims[2], output_buffer_cpu_2.get(), data_dims[3], mask,lanes_coords);
+        std::vector<std::vector<double>> fit_params;
+        sp_ImgPostProcessor_->ProcessLane(output_buffer_cpu_1.get(), data_dims[2], output_buffer_cpu_2.get(), data_dims[3], mask, lanes_coords, fit_params);
 
-        // bool plot = true;
-        bool plot = false;
+        bool plot = true;
+        // bool plot = false;
         if (plot)
         {
-            this->PlotImgs(file_name_no_extension, output_buffer_cpu_1, output_buffer_cpu_2, data_dims, mask, resized_img);
+            this->PlotImgs(file_name_no_extension,
+                           output_buffer_cpu_1,
+                           output_buffer_cpu_2,
+                           data_dims, mask,
+                           resized_img,
+                           lanes_coords,
+                           fit_params);
         }
 
         //
