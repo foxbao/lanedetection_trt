@@ -176,7 +176,7 @@ void ImgPostProcessor::RemoveSmallConnectComponents(const cv::Mat &labels, const
     }
 }
 
-void ImgPostProcessor::ProcessLane(const int *buffer_binary, const nvinfer1::Dims &dim_binary, const float *buffer_instance, const nvinfer1::Dims &dim_instance,cv::Mat &mask)
+void ImgPostProcessor::ProcessLane(const int *buffer_binary, const nvinfer1::Dims &dim_binary, const float *buffer_instance, const nvinfer1::Dims &dim_instance,cv::Mat &mask,std::vector<inner_type::Lane> &lanes_coords)
 {
     util::PPM ppm_binary;
     this->GenerateBinarySegment(buffer_binary, dim_binary, ppm_binary); // binary output
@@ -189,14 +189,11 @@ void ImgPostProcessor::ProcessLane(const int *buffer_binary, const nvinfer1::Dim
     this->ConnectComponentsAnalysis(morphological_ret, labels, stats, centroids);
     // remove the very small connected components
     this->RemoveSmallConnectComponents(labels,stats,morphological_ret);
-    std::vector<inner_type::Lane> lanes_coords;
     this->sp_laneCluster_->apply_lane_feats_cluster(morphological_ret,mat_instance_seg_result,lanes_coords,mask);
+
 
     std::vector<std::vector<double>> fit_params;
     this->LineFit(lanes_coords,fit_params);
-
-    // lane line fit
-    // polyfit()
 }
 
 int ImgPostProcessor::volume(util::PPM &ppm)
@@ -214,6 +211,9 @@ void ImgPostProcessor::WriteImg(const std::string &filename, util::PPM ppm)
     outfile << ppm.magic << " " << ppm.w << " " << ppm.h << " " << ppm.max << std::endl;
     outfile.write(reinterpret_cast<char *>(ppm.buffer.data()), volume(ppm));
     outfile.close();
+
+
+    
 }
 
 void ImgPostProcessor::LineFit(const std::vector<inner_type::Lane>& lanes_coords,std::vector<std::vector<double>>& fit_params)

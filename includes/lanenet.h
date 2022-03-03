@@ -36,7 +36,8 @@ private:
 
     std::vector<float> PrepareImage(std::vector<cv::Mat> & image);
     std::vector<cv::Mat> PostProcess(const std::vector<cv::Mat> &vec_Mat, float *output, const int &outSize);
-    void PlotImgs(const std::string &file_name_no_extension,std::shared_ptr<int>output_buffer_cpu_1,std::shared_ptr<float>output_buffer_cpu_2,const std::vector<nvinfer1::Dims> &data_dims,const cv::Mat &mask);
+    void Overlap(const int *buffer, int H,int W,cv::Mat &resized_img);
+    void PlotImgs(const std::string &file_name_no_extension,std::shared_ptr<int>output_buffer_cpu_1,std::shared_ptr<float>output_buffer_cpu_2,const std::vector<nvinfer1::Dims> &data_dims,const cv::Mat &mask,cv::Mat &resized_img);
     std::string onnx_file_;
     std::string engine_file_;
     int BATCH_SIZE;

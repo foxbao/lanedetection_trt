@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(lanenet_trt)
-set(CMAKE_BUILD_TYPE "Debug")
+set(CMAKE_BUILD_TYPE "Release")
 # set(CMAKE_BUILD_TYPE "Debug") 
 MESSAGE(STATUS "This is BINARY dir " ${PROJECT_BINARY_DIR})
 MESSAGE(STATUS "This is SOURCE dir " ${PROJECT_SOURCE_DIR})

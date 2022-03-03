@@ -10,7 +10,7 @@ class ImgPostProcessor
         void CalInstance(const float *buffer,const nvinfer1::Dims& dim,util::PPM &dst_ppm);
         void GenerateBinarySegmentThree(const int *buffer,const nvinfer1::Dims& dim,util::PPM &dst_ppm);
         void GenerateBinarySegment(const int *buffer,const nvinfer1::Dims& dim,util::PPM &dst_ppm);
-        void ProcessLane(const int *buffer_binary,const nvinfer1::Dims& dim_binary,const float *buffer_instance,const nvinfer1::Dims& dim_instance,cv::Mat &mask);
+        void ProcessLane(const int *buffer_binary,const nvinfer1::Dims& dim_binary,const float *buffer_instance,const nvinfer1::Dims& dim_instance,cv::Mat &mask,std::vector<inner_type::Lane> &lanes_coords);
         void WriteImg(const std::string& filename,const util::PPM ppm);
         void LineFit(const std::vector<inner_type::Lane>& lanes_coords,std::vector<std::vector<double>>& fit_params);
         int volume(util::PPM &ppm);
